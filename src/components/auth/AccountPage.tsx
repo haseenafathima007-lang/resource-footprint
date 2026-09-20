@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { User, LogOut, CheckCircle2, AlertCircle, RefreshCw, LayoutDashboard } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth.tsx';
 import { baselineRepository } from '../../services/supabase/baselineRepository.ts';
 import type { BaselineProfile } from '../../types/profile.ts';
+import { clearPendingBaseline } from '@/lib/pendingBaseline.ts';
 
 export function AccountPage() {
   useEffect(() => {
@@ -47,83 +50,136 @@ export function AccountPage() {
     }
   };
 
+  const handleSignOut = async () => {
+    clearPendingBaseline();
+    await signOut();
+  };
+
   return (
-    <div className="max-w-xl mx-auto my-12 p-6 bg-white border border-gray-200 rounded-lg shadow-sm space-y-6">
-      <div className="flex items-center justify-between border-b pb-4">
+    <div className="max-w-xl mx-auto my-12 p-6 sm:p-8 bg-surface-raised border border-border rounded-xl shadow-sm space-y-6 text-ink">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Account Settings</h2>
-          <p className="text-sm text-gray-600">Proof-of-concept for authentication and RLS data layer</p>
+          <h1 className="text-2xl font-bold text-ink">Account Settings</h1>
+          <p className="text-sm text-ink-muted">Manage your profile and authentication session</p>
         </div>
         <button
-          onClick={() => signOut()}
-          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded border"
+          onClick={handleSignOut}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] min-w-[44px] bg-surface hover:bg-surface-subtle text-ink text-sm font-medium rounded-lg border border-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          Sign Out
+          <LogOut className="w-4 h-4 text-ink-muted" aria-hidden="true" />
+          <span>Sign Out</span>
         </button>
       </div>
 
       {statusMessage && (
-        <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded">
-          {statusMessage}
+        <div
+          role="status"
+          className="p-3 bg-positive/10 border border-positive/20 text-positive text-sm rounded-lg flex items-start gap-2.5"
+        >
+          <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
+          <span>{statusMessage}</span>
         </div>
       )}
 
       {errorMessage && (
-        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded">
-          {errorMessage}
+        <div
+          role="alert"
+          className="p-3 bg-negative/10 border border-negative/20 text-negative text-sm rounded-lg flex items-start gap-2.5"
+        >
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
+          <span>{errorMessage}</span>
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">User ID</label>
-          <p className="font-mono text-sm text-gray-800 break-all">{user?.id}</p>
+          <span className="block text-xs font-semibold uppercase tracking-wider text-ink-muted">Email</span>
+          <p className="text-sm font-medium text-ink mt-0.5">{user?.email}</p>
         </div>
+
         <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</label>
-          <p className="text-sm text-gray-800">{user?.email}</p>
+          <span className="block text-xs font-semibold uppercase tracking-wider text-ink-muted">User ID</span>
+          <p className="text-xs font-mono text-ink-muted mt-0.5 break-all">{user?.id}</p>
         </div>
+
+        <form onSubmit={handleUpdateDisplayName} className="space-y-3 pt-2">
+          <label className="block text-sm font-medium text-ink" htmlFor="accountDisplayName">
+            Display Name
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <input
+                id="accountDisplayName"
+                type="text"
+                maxLength={80}
+                value={currentDisplayName}
+                onChange={(e) => setDisplayNameInput(e.target.value)}
+                placeholder="Enter your name"
+                className="w-full pl-10 pr-3 py-2 min-h-[44px] bg-surface border border-border rounded-lg text-ink focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+              />
+              <User className="w-4 h-4 text-ink-muted absolute left-3 top-3.5" aria-hidden="true" />
+            </div>
+            <button
+              type="submit"
+              disabled={updating}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] bg-primary text-on-primary hover:bg-primary-hover text-sm font-semibold rounded-lg shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+            >
+              {updating && <RefreshCw className="w-4 h-4 animate-spin" aria-hidden="true" />}
+              <span>Save Name</span>
+            </button>
+          </div>
+        </form>
       </div>
 
-      <form onSubmit={handleUpdateDisplayName} className="border-t pt-4 space-y-3">
-        <label htmlFor="accountDisplayName" className="block text-sm font-medium text-gray-700">
-          Display Name (stored in profiles table)
-        </label>
-        <div className="flex gap-2">
-          <input
-            id="accountDisplayName"
-            type="text"
-            maxLength={80}
-            value={currentDisplayName}
-            onChange={(e) => setDisplayNameInput(e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-            placeholder="Your name"
-          />
-          <button
-            type="submit"
-            disabled={updating}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium text-sm rounded-md"
+      <div className="border-t border-border pt-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-semibold text-ink">Baseline Profile</h2>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline min-h-[44px] py-2"
           >
-            {updating ? 'Saving...' : 'Update'}
-          </button>
+            <LayoutDashboard className="w-4 h-4" aria-hidden="true" />
+            <span>Go to Dashboard</span>
+          </Link>
         </div>
-      </form>
-
-      <div className="border-t pt-4">
-        <h3 className="text-md font-semibold text-gray-800 mb-2">Current Baseline Profile</h3>
         {loadingBaseline ? (
-          <p className="text-sm text-gray-500 animate-pulse">Loading baseline data...</p>
+          <p className="text-sm text-ink-muted animate-pulse">Loading baseline...</p>
         ) : baseline ? (
-          <div className="bg-gray-50 p-3 rounded border text-xs font-mono space-y-1">
-            <p>Effective From: {baseline.effectiveFrom}</p>
-            <p>Household Size: {baseline.householdSize}</p>
-            <p>Shower: {baseline.showerMinutesPerDay} min/day ({baseline.showerHeater} heater)</p>
-            <p>Cooling: AC {baseline.acHoursPerDay}h, Fan {baseline.fanHoursPerDay}h, Laptop {baseline.laptopHoursPerDay}h</p>
-            <p>Laundry: {baseline.laundryLoadsPerWeek} loads/wk ({baseline.laundryMachine})</p>
-            <p>Factors Version: {baseline.factorsVersion}</p>
+          <div className="p-4 bg-surface-subtle border border-border rounded-lg text-sm text-ink space-y-1.5">
+            <p>
+              <strong className="text-ink">Effective Date:</strong> {baseline.effectiveFrom}
+            </p>
+            <p>
+              <strong className="text-ink">Household Size:</strong> {baseline.householdSize}
+            </p>
+            <p>
+              <strong className="text-ink">Shower:</strong> {baseline.showerMinutesPerDay} min/day ({baseline.showerHeater} heater)
+            </p>
+            <p>
+              <strong className="text-ink">Cooling:</strong> AC {baseline.acHoursPerDay}h, Fan {baseline.fanHoursPerDay}h, Laptop {baseline.laptopHoursPerDay}h
+            </p>
+            <p>
+              <strong className="text-ink">Laundry:</strong> {baseline.laundryLoadsPerWeek} loads/wk ({baseline.laundryMachine})
+            </p>
+            <div className="pt-2">
+              <Link
+                to="/onboarding"
+                className="text-xs font-medium text-primary hover:underline inline-block min-h-[44px] py-2"
+              >
+                Update baseline wizard &rarr;
+              </Link>
+            </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-500">No baseline profile logged yet for this account.</p>
+          <div className="p-4 bg-surface-subtle border border-border rounded-lg text-sm text-ink-muted">
+            <p>No baseline profile configured yet.</p>
+            <Link
+              to="/onboarding"
+              className="mt-2 inline-block text-xs font-semibold text-primary hover:underline min-h-[44px] py-2"
+            >
+              Complete Onboarding Wizard &rarr;
+            </Link>
+          </div>
         )}
       </div>
     </div>

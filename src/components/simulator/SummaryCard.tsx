@@ -47,7 +47,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ summarySentence }) => 
           type="button"
           onClick={handleCopy}
           aria-label="Copy summary to clipboard"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-surface-subtle hover:bg-surface border border-border text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] min-w-[44px] text-xs font-semibold rounded-lg bg-surface-subtle hover:bg-surface border border-border text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           {copied ? (
             <>

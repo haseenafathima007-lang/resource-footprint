@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth.tsx";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute.tsx";
@@ -6,6 +7,9 @@ import { AccountPage } from "./components/auth/AccountPage.tsx";
 import { Layout } from "./components/layout/Layout.tsx";
 import { LandingPage } from "./pages/LandingPage.tsx";
 import { NotFoundPage } from "./pages/NotFoundPage.tsx";
+import { OnboardingPage } from "./pages/OnboardingPage.tsx";
+
+const DashboardPage = lazy(() => import("./pages/DashboardPage.tsx"));
 
 export function App() {
   return (
@@ -15,6 +19,30 @@ export function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute>
+                  <OnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center min-h-[50vh]">
+                        <p className="text-sm text-ink-muted animate-pulse">Loading dashboard...</p>
+                      </div>
+                    }
+                  >
+                    <DashboardPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/account"
               element={

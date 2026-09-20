@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Droplets, Zap, User as UserIcon } from "lucide-react";
+import { Droplets, Zap, User as UserIcon, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth.tsx";
 import { ThemeToggle } from "./ThemeToggle.tsx";
 
@@ -9,12 +9,12 @@ export const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-surface/90 backdrop-blur-md">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-1.5 sm:gap-4">
         {/* Brand Logo & Wordmark */}
         <Link
           to="/"
           aria-label="Resource Footprint"
-          className="flex items-center gap-2 text-ink font-bold text-base sm:text-xl tracking-tight hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md min-h-[44px] min-w-[44px]"
+          className="flex items-center gap-2 text-ink font-bold text-sm sm:text-xl tracking-tight hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md min-h-[44px] min-w-[44px]"
         >
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary shrink-0">
             <div className="relative">
@@ -26,21 +26,31 @@ export const Header: React.FC = () => {
         </Link>
 
         {/* Navigation & Controls */}
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <ThemeToggle />
 
           {user ? (
-            <Link
-              to="/account"
-              className="inline-flex items-center justify-center gap-1.5 px-4 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-medium rounded-lg border border-border bg-surface-raised hover:bg-surface-subtle text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <UserIcon className="w-4 h-4 text-primary" aria-hidden="true" />
-              <span>Account</span>
-            </Link>
+            <nav className="flex items-center gap-1 sm:gap-2" aria-label="User navigation">
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center justify-center gap-1 px-2.5 sm:px-3 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-medium rounded-lg border border-border bg-surface-raised hover:bg-surface-subtle text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <LayoutDashboard className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
+                <span className="hidden xs:inline sm:inline">Dashboard</span>
+              </Link>
+              <Link
+                to="/account"
+                aria-label="Account Settings"
+                className="inline-flex items-center justify-center gap-1 px-2.5 sm:px-3 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-medium rounded-lg border border-border bg-surface-raised hover:bg-surface-subtle text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <UserIcon className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
+                <span className="hidden xs:inline sm:inline">Account</span>
+              </Link>
+            </nav>
           ) : (
             <Link
               to="/auth"
-              className="inline-flex items-center justify-center px-4 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-semibold rounded-lg bg-primary text-on-primary hover:bg-primary-hover transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="inline-flex items-center justify-center px-3 sm:px-4 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-semibold rounded-lg bg-primary text-on-primary hover:bg-primary-hover transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               Sign in
             </Link>

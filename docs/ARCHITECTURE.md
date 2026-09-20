@@ -170,3 +170,44 @@ Styling is configured in `tailwind.config.js` and `src/index.css` using HSL CSS 
 - `water` / `water-bg`: Blue shades dedicated exclusively to water usage across all screens.
 - `energy` / `energy-bg`: Amber shades dedicated exclusively to energy consumption across all screens.
 - `positive` / `negative`: Semantic status indicators, always paired with explicit icons and descriptive text to avoid relying on color alone.
+
+---
+
+## 8. Onboarding, Dashboard & Guest Handoff Architecture
+
+### Onboarding Wizard Flow (`/onboarding`)
+- **4 Accessible Steps**:
+  1. `StepShowers`: Daily shower minutes and water heating method (electric geyser vs solar/ambient).
+  2. `StepCooling`: AC hours, fan hours, and laptop hours per day.
+  3. `StepLaundry`: Weekly laundry loads, washing machine type (top-load vs front-load), and household size.
+  4. `StepReview`: Comprehensive review of all inputs with direct "Edit" links back to each step, plus live calculation preview (scaled by engine).
+- **Accessibility & Focus Management**:
+  - Focus automatically shifts to the step heading (`h2`) on step transitions.
+  - Step progression announced via `aria-live="polite"`.
+  - Accessible `role="progressbar"` with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax`.
+  - Minimum 44x44px touch targets on all interactive inputs, steppers, radio choices, and action buttons.
+- **Strict Bounds Validation**:
+  - Validates fields against `PROFILE_BOUNDS` via `src/engine/validation.ts` prior to allowing forward navigation.
+
+### The Pure Dashboard Model (`src/lib/dashboardModel.ts`)
+- **Separation of Presentation from Computation**:
+  - All metrics, sustainability scores, category breakdowns, and accessible tabular data are derived by a pure, side-effect-free function:
+    `buildDashboardModel(baseline: BaselineProfile, factors: FactorSet, period: Period): DashboardModel`
+  - Calculates daily water & energy totals via `@/engine` (`calculateProfile`), scales by period via `scaleToPeriod`, and generates score bands ("Great" 80-100, "Getting there" 50-79, "Room to improve" 0-49) via `calculateScore`.
+  - Renders category breakdowns for water and energy as standalone CSS/Recharts bar charts with corresponding screen-reader table alternatives.
+
+### Per-Baseline Factor Version Resolution (`useBaseline.ts`)
+- **Reproducible History Invariant**:
+  - Historical baselines reference a specific `factors_version` foreign key.
+  - When rendering historical snapshots, the client checks if `factorsVersion === BUNDLED_FACTORS.version`.
+  - If matching, it uses the local zero-latency factors map.
+  - If differing, it queries `FactorRepository.getFactorSet(factorsVersion)`. If the factor version cannot be resolved, the entry is explicitly rendered as "unavailable" rather than silently computing with inaccurate conversion factors.
+
+### Guest-to-Account Handoff (`src/lib/pendingBaseline.ts` & `src/lib/postAuthDestination.ts`)
+- **Pre-Signup State Preservation**:
+  - Anonymous visitors interacting with the What-If Simulator can save their configuration via "Save this as my baseline".
+  - Stored in `localStorage` under `rf.pendingBaseline` as `{ version: 1, savedAt: number, baseline: BaselineProfile }` with a 24-hour TTL.
+  - `loadPendingBaseline()` checks TTL and validates domain constraints through `validateProfile()`. Corrupted, expired, or out-of-bounds data is discarded safely.
+  - After signing up or signing in, `postAuthDestination()` inspects pending storage and existing account baselines, directing users to `/onboarding?from=simulator` or `/dashboard`.
+  - The user MUST review and confirm their habits in the wizard before any row is written to PostgreSQL. Upon successful save, the pending baseline is permanently evicted from storage.
+

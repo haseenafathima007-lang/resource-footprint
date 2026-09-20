@@ -28,7 +28,7 @@ export const PeriodToggle: React.FC<PeriodToggleProps> = ({ period, onChange }) 
             type="button"
             aria-pressed={isSelected}
             onClick={() => onChange(value)}
-            className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+            className={`px-3 py-2 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-medium rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
               isSelected
                 ? "bg-surface-raised text-primary font-semibold shadow-sm"
                 : "text-ink-muted hover:text-ink"

@@ -4,14 +4,12 @@ A modern web application helping people measure, understand, and reduce the **wa
 
 ---
 
-## Current Status: Phase 3 Complete ✅
+## Current Status: Phase 4 Complete ✅
 
 - **Phase 1 Complete**: Domain models, calculation engine split into pure modules, versioned factors, test suite.
 - **Phase 2 Complete**: Supabase backend, PostgreSQL schema migrations with RLS, pgTAP test suite, typed service repositories (`Result<T, E>`), authentication & account routing.
 - **Phase 3 Complete**: Landing page & What-If Simulator hero feature, theme system (light/dark/system), outward-rounded ranges, accessible CSS/SVG comparison bars, shareable URL state & summary.
-
-- **Phase 1 Complete**: Domain models, calculation engine with `PROFILE_BOUNDS`, versioned factors, test suite.
-- **Phase 2 Complete**: Supabase backend, PostgreSQL schema migrations with RLS, pgTAP test suite, typed service repositories (`Result<T, E>`), authentication & account routing.
+- **Phase 4 Complete**: Onboarding baseline profile wizard (4-step accessible wizard), personal dashboard with water/energy breakdown & baseline history, guest-to-account simulator handoff flow with 24h expiry.
 
 ---
 
@@ -66,8 +64,17 @@ During local development, all outgoing auth confirmation and magic link emails a
 ### Routes
 - `/` — Landing Page with What-If Simulator (works immediately with zero signup, offline-ready).
 - `/auth` — Sign in, registration, and magic link authentication.
+- `/onboarding` — Protected 4-step wizard to setup or edit baseline profile (Showers, Cooling, Laundry, Review).
+- `/dashboard` — Protected personal dashboard with Day/Week/Month resource cards, breakdown charts, and baseline history.
 - `/account` — Protected account settings and profile display.
 - `*` — Accessible 404 Page Not Found.
+
+### Guest-to-Account Handoff Flow
+1. **Try Before Signup**: An anonymous visitor tunes the What-If Simulator on `/`.
+2. **Save Baseline Intent**: Clicking "Save this as my baseline" stores `{ version: 1, savedAt, baseline }` in `localStorage` under `rf.pendingBaseline` (valid for 24 hours).
+3. **Authentication**: Redirects to `/auth`. Once authenticated (via password or magic link), `postAuthDestination` routes the user to `/onboarding?from=simulator`.
+4. **Mandatory Confirmation**: The 4-step onboarding wizard pre-fills the guest's simulator values with a notice (*"We kept the habits you tried in the simulator. Check them and save."*). The user reviews and confirms before any data writes to Postgres.
+5. **Clean State**: Upon saving, the pending baseline is purged from `localStorage`.
 
 ### How the What-If Simulator Works
 1. **Offline & Pre-signup**: Loads conversion benchmarks from bundled `src/data/factors.v1.json` via the pure calculation engine without database calls.

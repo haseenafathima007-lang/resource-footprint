@@ -50,3 +50,32 @@ Key architectural decisions made in Phase 2 for Resource Footprint.
 - **Context**: Users exploring habit changes want to share their scenarios or bookmark specific simulator setups without signing in.
 - **Decision**: Serialize baseline habits, scenario adjustments, and period toggles to concise numeric query parameters (e.g., `b_ac=4&s_ac=3`), updating the URL via `window.history.replaceState`.
 - **Rationale**: Using `replaceState` prevents history stack pollution (avoiding dozens of slider drag history entries), keeps URLs free of personal data, and provides instant shareability. Parameter inputs are strictly pre-validated against `validateProfile` and engine bounds on parse.
+
+---
+
+## 8. LocalStorage Guest Handoff with Expiry and Confirmation
+- **Context**: Visitors fine-tune habit parameters on the public What-If Simulator and want to save that exact profile upon registering an account.
+- **Decision**: Persist guest inputs into `localStorage` (`rf.pendingBaseline`) formatted as `{ version: 1, savedAt: timestamp, baseline: BaselineProfile }` with a 24-hour expiration window.
+- **Rationale**: A magic-link authentication flow may open in an external email client or new browser tab, making `sessionStorage` unreliable. The data structure holds strictly numeric habit inputs (no PII), validates safely against `validateProfile` discarding corrupted or expired payloads, and requires manual review and confirmation in the onboarding wizard prior to database persistence. The pending payload is permanently evicted upon saving or sign-out.
+
+---
+
+## 9. Per-Baseline Factor Versions for Historical Reproducibility
+- **Context**: Baseline habit profiles recorded months or years in the past must remain accurately reproducible even when national grid or water utility factors are updated in new factor sets.
+- **Decision**: Every baseline profile row references a foreign key `factors_version`. When calculating dashboard history, each snapshot resolves factors specifically for its recorded version.
+- **Rationale**: If historical calculations were always recomputed with the latest factor set, past data would subtly shift over time. If a factor set cannot be resolved, the entry is explicitly rendered as "unavailable" rather than silently computing with inaccurate conversion factors.
+
+---
+
+## 10. No Fabricated Historical Points
+- **Context**: The personal dashboard features a baseline history timeline. New users start with a single baseline profile.
+- **Decision**: If a user has fewer than two recorded baseline snapshots, display an explicit informative empty state (*"Your history will build up as you update your baseline"*) rather than interpolating, synthesizing hypothetical earlier points, or drawing artificial flat lines.
+- **Rationale**: Adheres to the core principle of "Honest Numbers". Fabricating trend points or interpolating dates misleads users into interpreting synthetic benchmarks as personal history.
+
+---
+
+## 11. Route-Level Code Splitting for Recharts
+- **Context**: `recharts` is required for rich, accessible water/energy breakdown charts and historical area charts on `/dashboard`, but adds significant bundle weight (~114 kB gzip) to client payloads.
+- **Decision**: Code-split `/dashboard` via `React.lazy()` and dynamic `import("./pages/DashboardPage.tsx")` wrapped in `Suspense`.
+- **Rationale**: Anonymous visitors exploring the landing page and What-If Simulator load only the lightweight core bundle (~172 kB gzip), completely excluding Recharts and Lucide chart assets until authenticated navigation to `/dashboard`.
+

@@ -9,7 +9,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <p className="text-gray-500 animate-pulse">Checking authentication...</p>
+        <p className="text-ink-muted animate-pulse text-sm">Checking authentication...</p>
       </div>
     );
   }
