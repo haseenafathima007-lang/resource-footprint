@@ -6,6 +6,7 @@ export default [
   {
     ignores: [
       'dist/**',
+      'coverage/**',
       'node_modules/**',
       'supabase/**',
       'src/services/database.types.ts',
