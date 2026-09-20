@@ -6,6 +6,8 @@ import type {
   Factor,
   FactorSetPayload,
   FactorsMap,
+  DayResult,
+  Deviation,
 } from '@/engine';
 import {
   calculate,
@@ -14,6 +16,10 @@ import {
   scaleToPeriod,
   toFactorsMap,
   PERIOD_MULTIPLIERS,
+  EngineError,
+  addDays,
+  compareISO,
+  calculateWindow,
 } from '@/engine';
 
 export type ScoreBand = 'room-to-improve' | 'getting-there' | 'great';
@@ -151,8 +157,15 @@ export function createDashboardModel(
   const refWaterFactor = factors['reference.household.water'];
   const refEnergyFactor = factors['reference.household.energy'];
 
-  const referenceWater = refWaterFactor?.typical ?? 250;
-  const referenceEnergy = refEnergyFactor?.typical ?? 6;
+  if (!refWaterFactor || !refEnergyFactor) {
+    throw new EngineError(
+      'Missing required reference factors (reference.household.water or reference.household.energy)',
+      'MISSING_FACTOR'
+    );
+  }
+
+  const referenceWater = refWaterFactor.typical;
+  const referenceEnergy = refEnergyFactor.typical;
 
   const scoreResult = calculateScore(
     {
@@ -205,3 +218,65 @@ export function createDashboardModel(
     allVerified,
   };
 }
+
+export interface Dashboard30DayModel {
+  startDate: string;
+  endDate: string;
+  days: DayResult[];
+  totals: {
+    baseline: ActivityResult;
+    actual: ActivityResult;
+    difference: ActivityResult;
+  };
+  activeDeviations: Deviation[];
+  earliestBaselineProjectedBackwards: boolean;
+  earliestBaselineDate: string;
+  unavailableDays: string[];
+}
+
+/**
+ * Computes a 30-day baseline vs actual window ending on `today`.
+ */
+export function calculate30DayDashboardModel(input: {
+  history: BaselineProfile[];
+  deviations: Deviation[];
+  factorsByVersion: Record<string, FactorSetPayload | Factor[] | FactorsMap>;
+  today: string;
+}): Dashboard30DayModel {
+  const endDate = input.today;
+  const startDate = addDays(endDate, -29); // 30 days total
+
+  const sortedHistory = [...input.history].sort((a, b) =>
+    compareISO(a.effectiveFrom, b.effectiveFrom)
+  );
+  const earliestBaselineDate = sortedHistory[0]?.effectiveFrom || startDate;
+  const earliestBaselineProjectedBackwards = compareISO(startDate, earliestBaselineDate) < 0;
+
+  const windowResult = calculateWindow({
+    history: input.history,
+    deviations: input.deviations,
+    factorsByVersion: input.factorsByVersion,
+    startDate,
+    endDate,
+  });
+
+  // Collect distinct active deviations in the window
+  const activeDevsMap = new Map<string, Deviation>();
+  for (const d of input.deviations) {
+    if (compareISO(d.startDate, endDate) <= 0 && compareISO(startDate, d.endDate) <= 0) {
+      activeDevsMap.set(d.id, d);
+    }
+  }
+
+  return {
+    startDate,
+    endDate,
+    days: windowResult.days,
+    totals: windowResult.totals,
+    activeDeviations: Array.from(activeDevsMap.values()),
+    earliestBaselineProjectedBackwards,
+    earliestBaselineDate,
+    unavailableDays: windowResult.unavailableDays,
+  };
+}
+

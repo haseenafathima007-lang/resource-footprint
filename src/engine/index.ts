@@ -5,3 +5,5 @@ export * from './calculate.ts';
 export * from './periods.ts';
 export * from './score.ts';
 export * from './profile.ts';
+export * from './dates.ts';
+export * from './deviations.ts';

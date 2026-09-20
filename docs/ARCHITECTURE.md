@@ -54,6 +54,7 @@ erDiagram
     deviations {
         uuid id PK "gen_random_uuid()"
         uuid user_id FK "references auth.users(id)"
+        uuid group_id "grouping multi-habit presets"
         date start_date
         date end_date "check end_date >= start_date"
         text field "shower/ac/fan/laptop/laundry"
@@ -61,6 +62,7 @@ erDiagram
         numeric value
         text note "max 200 chars"
         timestamptz created_at
+        timestamptz updated_at
     }
 ```
 

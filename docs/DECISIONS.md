@@ -79,3 +79,32 @@ Key architectural decisions made in Phase 2 for Resource Footprint.
 - **Decision**: Code-split `/dashboard` via `React.lazy()` and dynamic `import("./pages/DashboardPage.tsx")` wrapped in `Suspense`.
 - **Rationale**: Anonymous visitors exploring the landing page and What-If Simulator load only the lightweight core bundle (~172 kB gzip), completely excluding Recharts and Lucide chart assets until authenticated navigation to `/dashboard`.
 
+---
+
+## 12. Grouped Deviations with UUID `group_id` and Undo Action
+- **Context**: Users frequently log multi-habit temporary events (e.g. a "Summer heatwave" that increases AC by +3h and fans by +2h for 5 days).
+- **Decision**: Persist multi-field deviation entries with a shared `group_id` (UUID). Deletions and single-click "Undo" operations target the entire `group_id` atomically.
+- **Rationale**: Storing discrete field rows preserves clean relational indexing and bounds checks while `group_id` grouping ensures the user experiences coherent multi-field events in the history UI and undo toasts.
+
+---
+
+## 13. Timezone-Agnostic UTC Calendar Arithmetic
+- **Context**: Dated deviations span days across daylight savings transitions and user timezone shifts.
+- **Decision**: All date calculations operate on canonical ISO strings (`YYYY-MM-DD`) and UTC millisecond timestamps (`Date.UTC`), completely bypassing local machine time offsets.
+- **Rationale**: Prevents off-by-one day errors during DST transitions (e.g., 23-hour or 25-hour calendar days) and ensures deterministic daily slicing across all client and server environments.
+
+---
+
+## 14. Clamping and Bound Guarantees for Deviations
+- **Context**: Users may log delta reductions that exceed their baseline habits (e.g. baseline AC 2h, delta -4h) or extreme overrides.
+- **Decision**: Apply clamp rules in the engine (`Math.max(min, Math.min(max, effectiveValue))`), reporting all clamped fields explicitly in `DayResult.clampedFields`.
+- **Rationale**: Physical usage cannot drop below 0 or exceed 24 hours per day. Transparently reporting clamped fields ensures the user UI can flag clamped inputs without throwing or crashing calculations.
+
+---
+
+## 15. Public Methodology Page with Zero Network Dependency
+- **Context**: The `/methodology` page must serve as an open science resource for visitors, students, and researchers with radical transparency.
+- **Decision**: Power the entire `/methodology` page from bundled `factors.v1.json` and pure engine calculation functions, requiring zero authentication and zero network round-trips.
+- **Rationale**: Guarantees instant load times, full offline availability, and ensures all formulas and live worked examples are computed with 100% mathematical fidelity directly from the client engine.
+
+

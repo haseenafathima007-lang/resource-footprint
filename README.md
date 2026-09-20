@@ -4,12 +4,13 @@ A modern web application helping people measure, understand, and reduce the **wa
 
 ---
 
-## Current Status: Phase 4 Complete ✅
+## Current Status: Phase 5 Complete ✅
 
 - **Phase 1 Complete**: Domain models, calculation engine split into pure modules, versioned factors, test suite.
 - **Phase 2 Complete**: Supabase backend, PostgreSQL schema migrations with RLS, pgTAP test suite, typed service repositories (`Result<T, E>`), authentication & account routing.
 - **Phase 3 Complete**: Landing page & What-If Simulator hero feature, theme system (light/dark/system), outward-rounded ranges, accessible CSS/SVG comparison bars, shareable URL state & summary.
 - **Phase 4 Complete**: Onboarding baseline profile wizard (4-step accessible wizard), personal dashboard with water/energy breakdown & baseline history, guest-to-account simulator handoff flow with 24h expiry.
+- **Phase 5 Complete**: Dated deviation logging ("Log a change" at `/log`), multi-baseline deviation-aware numbers on the personal dashboard (`/dashboard`), 30-day timeline chart with accessible table fallback, and a public Methodology & Science page (`/methodology`).
 
 ---
 

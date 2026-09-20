@@ -10,6 +10,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Simulator } from "@/components/simulator/Simulator.tsx";
+import { FactorTable } from "@/components/methodology/FactorTable.tsx";
 import factorsData from "@/data/factors.v1.json";
 
 export const LandingPage: React.FC = () => {
@@ -118,43 +119,8 @@ export const LandingPage: React.FC = () => {
             <span>View All Conversion Factors (v{factorsData.version})</span>
             <ChevronDown className="w-4 h-4 text-ink-muted transition-transform group-open:rotate-180" aria-hidden="true" />
           </summary>
-          <div className="p-4 pt-0 overflow-x-auto">
-            <table className="w-full text-left text-xs text-ink">
-              <thead className="border-b border-border text-ink-muted">
-                <tr>
-                  <th className="pb-2 font-semibold">Factor ID</th>
-                  <th className="pb-2 font-semibold">Label</th>
-                  <th className="pb-2 font-semibold">Unit</th>
-                  <th className="pb-2 font-semibold">Typical (Low – High)</th>
-                  <th className="pb-2 font-semibold">Source</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {factorsData.factors.map((f) => {
-                  const isVerified = (f as { verified?: boolean }).verified === true;
-                  return (
-                    <tr key={f.id} className="hover:bg-surface/50">
-                      <td className="py-2.5 font-mono text-[11px] text-ink-muted pr-2">{f.id}</td>
-                      <td className="py-2.5 font-medium text-ink pr-2">{f.label}</td>
-                      <td className="py-2.5 text-ink-muted pr-2 whitespace-nowrap">{f.unit}</td>
-                      <td className="py-2.5 font-semibold text-ink pr-2 whitespace-nowrap">
-                        {f.typical} ({f.low} – {f.high})
-                      </td>
-                      <td className="py-2.5 text-ink-muted max-w-xs">
-                        <div className="flex items-center justify-between gap-2">
-                          <span>{f.source}</span>
-                          {!isVerified && (
-                            <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold text-ink-muted bg-surface border border-border rounded shrink-0">
-                              unverified
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="p-4 pt-0">
+            <FactorTable />
           </div>
         </details>
       </section>

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Droplets, Zap, User as UserIcon, LayoutDashboard } from "lucide-react";
+import { Droplets, Zap, User as UserIcon, LayoutDashboard, CalendarPlus, BookOpen } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth.tsx";
 import { ThemeToggle } from "./ThemeToggle.tsx";
 
@@ -27,6 +27,14 @@ export const Header: React.FC = () => {
 
         {/* Navigation & Controls */}
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <Link
+            to="/methodology"
+            className="inline-flex items-center justify-center gap-1 px-2.5 sm:px-3 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-medium rounded-lg text-ink-muted hover:text-ink hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <BookOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">Methodology</span>
+          </Link>
+
           <ThemeToggle />
 
           {user ? (
@@ -37,6 +45,13 @@ export const Header: React.FC = () => {
               >
                 <LayoutDashboard className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
                 <span className="hidden xs:inline sm:inline">Dashboard</span>
+              </Link>
+              <Link
+                to="/log"
+                className="inline-flex items-center justify-center gap-1 px-2.5 sm:px-3 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-medium rounded-lg border border-border bg-surface-raised hover:bg-surface-subtle text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <CalendarPlus className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
+                <span className="hidden xs:inline sm:inline">Log Change</span>
               </Link>
               <Link
                 to="/account"

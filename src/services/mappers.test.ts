@@ -99,10 +99,11 @@ describe('Services Mappers (DB snake_case <-> Engine camelCase)', () => {
     const deviation: Omit<Deviation, 'id' | 'createdAt'> = {
       startDate: '2026-07-01',
       endDate: '2026-07-05',
-      field: 'ac_hours_per_day',
+      field: 'acHoursPerDay',
       mode: 'delta',
       value: 3,
       note: 'Summer heatwave',
+      groupId: 'group-1',
     };
 
     it('maps Deviation to DbDeviationInsert', () => {
@@ -115,6 +116,7 @@ describe('Services Mappers (DB snake_case <-> Engine camelCase)', () => {
         mode: 'delta',
         value: 3,
         note: 'Summer heatwave',
+        group_id: 'group-1',
       });
     });
 
@@ -128,21 +130,40 @@ describe('Services Mappers (DB snake_case <-> Engine camelCase)', () => {
         mode: 'delta',
         value: '3.00',
         note: 'Summer heatwave',
+        group_id: 'group-1',
         created_at: '2026-09-20T10:00:00Z',
+        updated_at: '2026-09-20T10:00:00Z',
       };
 
       const mapped = mapDbDeviationToDeviation(row);
       expect(mapped).toEqual({
         id: 'dev-1',
-        userId: 'user-xyz',
         startDate: '2026-07-01',
         endDate: '2026-07-05',
-        field: 'ac_hours_per_day',
+        field: 'acHoursPerDay',
         mode: 'delta',
         value: 3,
         note: 'Summer heatwave',
+        groupId: 'group-1',
         createdAt: '2026-09-20T10:00:00Z',
       });
+    });
+
+    it('maps all engine deviation fields to db fields correctly', () => {
+      const fields: Array<Deviation['field']> = [
+        'showerMinutesPerDay',
+        'acHoursPerDay',
+        'fanHoursPerDay',
+        'laptopHoursPerDay',
+        'laundryLoadsPerWeek',
+      ];
+      for (const field of fields) {
+        const insert = mapDeviationToDbInsert(
+          { startDate: '2026-01-01', endDate: '2026-01-02', field, mode: 'override', value: 0 },
+          'u1'
+        );
+        expect(insert.field).toBeTruthy();
+      }
     });
   });
 

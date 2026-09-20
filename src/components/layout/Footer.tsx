@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import factorsData from "@/data/factors.v1.json";
 
 export const Footer: React.FC = () => {
@@ -12,7 +13,13 @@ export const Footer: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6">
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
+          <Link
+            to="/methodology"
+            className="text-xs font-semibold text-primary hover:underline"
+          >
+            Methodology & Factors
+          </Link>
           <span className="font-semibold text-ink px-2.5 py-1 rounded-full bg-surface-raised border border-border text-xs">
             Estimates, not measurements
           </span>

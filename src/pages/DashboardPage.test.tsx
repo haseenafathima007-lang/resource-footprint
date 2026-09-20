@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { DashboardPage } from './DashboardPage.tsx';
 import { baselineRepository } from '@/services/supabase/baselineRepository.ts';
+import { deviationRepository } from '@/services/supabase/deviationRepository.ts';
 import { factorRepository } from '@/services/supabase/factorRepository.ts';
 import factorsData from '@/data/factors.v1.json';
 import type { BaselineProfile, FactorSetPayload } from '@/engine';
@@ -13,6 +14,15 @@ vi.mock('@/services/supabase/baselineRepository.ts', () => ({
   baselineRepository: {
     getCurrentBaseline: vi.fn(),
     getBaselineHistory: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/supabase/deviationRepository.ts', () => ({
+  deviationRepository: {
+    list: vi.fn().mockResolvedValue({ ok: true, data: [] }),
+    addMany: vi.fn(),
+    delete: vi.fn(),
+    removeGroup: vi.fn(),
   },
 }));
 
@@ -53,11 +63,16 @@ const defaultProfile: BaselineProfile = {
 describe('DashboardPage Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(deviationRepository.list).mockResolvedValue({
+      ok: true,
+      data: [],
+    });
   });
 
   it('renders loading skeleton while fetching baseline data', async () => {
     vi.mocked(baselineRepository.getCurrentBaseline).mockReturnValue(new Promise(() => {}));
     vi.mocked(baselineRepository.getBaselineHistory).mockReturnValue(new Promise(() => {}));
+    vi.mocked(deviationRepository.list).mockReturnValue(new Promise(() => {}));
 
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
@@ -358,5 +373,85 @@ describe('DashboardPage Component', () => {
 
     // Trust banner should be hidden
     expect(screen.queryByText(/placeholder averages that are still being verified/i)).toBeNull();
+  });
+
+  it('renders 30-day baseline vs actual chart, active deviations, and allows toggling to table view', async () => {
+    const mockDeviation = {
+      id: 'dev-1',
+      userId: 'user-1',
+      startDate: '2026-07-01',
+      endDate: '2026-07-05',
+      field: 'acHoursPerDay' as const,
+      mode: 'delta' as const,
+      value: 3,
+      note: 'Summer heatwave',
+      groupId: 'grp-1',
+      createdAt: '2026-07-01T00:00:00Z',
+    };
+
+    vi.mocked(baselineRepository.getCurrentBaseline).mockResolvedValue({
+      ok: true,
+      data: defaultProfile,
+    });
+    vi.mocked(baselineRepository.getBaselineHistory).mockResolvedValue({
+      ok: true,
+      data: [defaultProfile],
+    });
+    vi.mocked(deviationRepository.list).mockResolvedValue({
+      ok: true,
+      data: [mockDeviation],
+    });
+
+    const fixedClock = () => new Date('2026-07-10T12:00:00Z');
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <DashboardPage clock={fixedClock} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /resource dashboard/i })).toBeDefined();
+      expect(screen.getByText('30-Day Activity & Actuals')).toBeDefined();
+      expect(screen.getByText('Summer heatwave:')).toBeDefined();
+      expect(screen.getByText('2026-07-01 to 2026-07-05')).toBeDefined();
+    });
+
+    // Toggle to table view
+    const tableToggleBtn = await screen.findByRole('button', { name: /switch to accessible 30-day table view/i });
+    fireEvent.click(tableToggleBtn);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('table').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByRole('cell', { name: '2026-07-01' }).length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it('shows note when 30-day window extends before earliest baseline date', async () => {
+    const recentBaseline: BaselineProfile = {
+      ...defaultProfile,
+      effectiveFrom: '2026-07-08', // only 2 days ago relative to fixed clock 2026-07-10
+    };
+
+    vi.mocked(baselineRepository.getCurrentBaseline).mockResolvedValue({
+      ok: true,
+      data: recentBaseline,
+    });
+    vi.mocked(baselineRepository.getBaselineHistory).mockResolvedValue({
+      ok: true,
+      data: [recentBaseline],
+    });
+
+    const fixedClock = () => new Date('2026-07-10T12:00:00Z');
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <DashboardPage clock={fixedClock} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/includes dates before your earliest recorded baseline/i)).toBeDefined();
+    });
   });
 });

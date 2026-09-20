@@ -2,12 +2,15 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import type { Period } from '@/engine';
 import { useBaseline } from '@/hooks/useBaseline.ts';
-import { createDashboardModel } from '@/lib/dashboardModel.ts';
+import { useDeviations } from '@/hooks/useDeviations.ts';
+import { useToday, type ClockFunction } from '@/hooks/useToday.ts';
+import { createDashboardModel, calculate30DayDashboardModel } from '@/lib/dashboardModel.ts';
 import { PeriodToggle } from '@/components/simulator/PeriodToggle.tsx';
 import { SummaryCards } from '@/components/dashboard/SummaryCards.tsx';
 import { ScoreCard } from '@/components/dashboard/ScoreCard.tsx';
 import { BreakdownCharts } from '@/components/dashboard/BreakdownCharts.tsx';
 import { HistoryChart } from '@/components/dashboard/HistoryChart.tsx';
+import { ThirtyDayChart } from '@/components/dashboard/ThirtyDayChart.tsx';
 import {
   DashboardSkeleton,
   DashboardError,
@@ -19,9 +22,14 @@ import {
   Sliders,
   CheckCircle2,
   AlertTriangle,
+  CalendarPlus,
 } from 'lucide-react';
 
-export function DashboardPage() {
+interface DashboardPageProps {
+  clock?: ClockFunction;
+}
+
+export function DashboardPage({ clock }: DashboardPageProps) {
   const location = useLocation();
   const confirmationMessage = (location.state as { confirmation?: string })?.confirmation;
 
@@ -30,13 +38,22 @@ export function DashboardPage() {
   }, []);
 
   const {
-    loading,
-    error,
+    loading: baselineLoading,
+    error: baselineError,
     currentBaseline,
     currentFactors,
     history,
-    reload,
+    reload: reloadBaseline,
   } = useBaseline();
+
+  const {
+    deviations,
+    loading: deviationsLoading,
+    error: deviationsError,
+    reload: reloadDeviations,
+  } = useDeviations();
+
+  const { today } = useToday(clock);
 
   // Period state: default Month, persisted in component state only
   const [period, setPeriod] = useState<Period>('month');
@@ -46,6 +63,39 @@ export function DashboardPage() {
     if (!currentBaseline || !currentFactors) return null;
     return createDashboardModel(currentBaseline, currentFactors, period);
   }, [currentBaseline, currentFactors, period]);
+
+  // Compute 30-day baseline vs actual window model
+  const thirtyDayModel = useMemo(() => {
+    if (!currentBaseline || !currentFactors || history.length === 0) return null;
+
+    const factorsByVersion: Record<string, import('@/engine').FactorSetPayload> = {};
+    for (const h of history) {
+      if (h.factors) {
+        factorsByVersion[h.baseline.factorsVersion] = h.factors;
+      }
+    }
+    if (currentFactors) {
+      factorsByVersion[currentBaseline.factorsVersion] = currentFactors;
+    }
+
+    try {
+      return calculate30DayDashboardModel({
+        history: history.map((h) => h.baseline),
+        deviations,
+        factorsByVersion,
+        today,
+      });
+    } catch {
+      return null;
+    }
+  }, [currentBaseline, currentFactors, history, deviations, today]);
+
+  const loading = baselineLoading || deviationsLoading;
+  const error = baselineError || deviationsError;
+
+  const handleRetry = async () => {
+    await Promise.all([reloadBaseline(), reloadDeviations()]);
+  };
 
   if (loading) {
     return (
@@ -58,7 +108,7 @@ export function DashboardPage() {
   if (error) {
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <DashboardError message={error} onRetry={reload} />
+        <DashboardError message={error} onRetry={handleRetry} />
       </div>
     );
   }
@@ -132,6 +182,14 @@ export function DashboardPage() {
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Link
+            to="/log"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-semibold rounded-xl bg-primary text-on-primary hover:bg-primary-hover transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            <CalendarPlus className="w-4 h-4" aria-hidden="true" />
+            <span>Log a Change</span>
+          </Link>
+
+          <Link
             to="/onboarding"
             className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-medium rounded-xl border border-border bg-surface-raised hover:bg-surface-subtle text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
@@ -161,6 +219,13 @@ export function DashboardPage() {
         </div>
       </div>
 
+      {/* 30-Day Activity & Actuals Section */}
+      {thirtyDayModel && (
+        <section aria-labelledby="thirty-day-heading">
+          <ThirtyDayChart model={thirtyDayModel} />
+        </section>
+      )}
+
       {/* Category Breakdown Section (Recharts & Screen-Reader Table) */}
       <section aria-labelledby="breakdown-heading">
         <BreakdownCharts
@@ -178,3 +243,4 @@ export function DashboardPage() {
 }
 
 export default DashboardPage;
+

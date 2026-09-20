@@ -1,5 +1,5 @@
 import type { BaselineProfile } from '../types/profile.ts';
-import type { Deviation, DeviationField, DeviationMode } from '../types/deviation.ts';
+import type { Deviation, DeviationField } from '../types/deviation.ts';
 import type { FactorSetPayload } from '../types/factor.ts';
 import type { UserProfile } from './types.ts';
 
@@ -44,24 +44,43 @@ export interface DbBaselineProfileInsert {
 export interface DbDeviationRow {
   id: string;
   user_id: string;
+  group_id: string | null;
   start_date: string;
   end_date: string;
-  field: DeviationField;
-  mode: DeviationMode;
+  field: string;
+  mode: 'delta' | 'override';
   value: number | string;
   note: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface DbDeviationInsert {
   user_id: string;
+  group_id?: string | null;
   start_date: string;
   end_date: string;
-  field: DeviationField;
-  mode: DeviationMode;
+  field: string;
+  mode: 'delta' | 'override';
   value: number;
   note?: string | null;
 }
+
+export const DEVIATION_FIELD_TO_DB: Record<DeviationField, string> = {
+  showerMinutesPerDay: 'shower_minutes_per_day',
+  acHoursPerDay: 'ac_hours_per_day',
+  fanHoursPerDay: 'fan_hours_per_day',
+  laptopHoursPerDay: 'laptop_hours_per_day',
+  laundryLoadsPerWeek: 'laundry_loads_per_week',
+};
+
+export const DB_TO_DEVIATION_FIELD: Record<string, DeviationField> = {
+  shower_minutes_per_day: 'showerMinutesPerDay',
+  ac_hours_per_day: 'acHoursPerDay',
+  fan_hours_per_day: 'fanHoursPerDay',
+  laptop_hours_per_day: 'laptopHoursPerDay',
+  laundry_loads_per_week: 'laundryLoadsPerWeek',
+};
 
 export interface DbFactorSetRow {
   version: string;
@@ -120,13 +139,14 @@ export function mapBaselineToDbInsert(
 }
 
 export function mapDbDeviationToDeviation(row: DbDeviationRow): Deviation {
+  const field = DB_TO_DEVIATION_FIELD[row.field] || (row.field as DeviationField);
   return {
     id: row.id,
-    userId: row.user_id,
+    groupId: row.group_id,
     startDate: row.start_date,
     endDate: row.end_date,
-    field: row.field,
-    mode: row.mode,
+    field,
+    mode: row.mode as 'delta' | 'override',
     value: Number(row.value),
     note: row.note,
     createdAt: row.created_at,
@@ -137,11 +157,13 @@ export function mapDeviationToDbInsert(
   deviation: Omit<Deviation, 'id' | 'createdAt'>,
   userId: string
 ): DbDeviationInsert {
+  const dbField = DEVIATION_FIELD_TO_DB[deviation.field] || deviation.field;
   return {
     user_id: userId,
+    group_id: deviation.groupId ?? null,
     start_date: deviation.startDate,
     end_date: deviation.endDate,
-    field: deviation.field,
+    field: dbField,
     mode: deviation.mode,
     value: deviation.value,
     note: deviation.note ?? null,

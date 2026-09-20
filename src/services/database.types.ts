@@ -95,10 +95,12 @@ export type Database = {
           created_at: string
           end_date: string
           field: string
+          group_id: string | null
           id: string
           mode: string
           note: string | null
           start_date: string
+          updated_at: string
           user_id: string
           value: number
         }
@@ -106,10 +108,12 @@ export type Database = {
           created_at?: string
           end_date: string
           field: string
+          group_id?: string | null
           id?: string
           mode: string
           note?: string | null
           start_date: string
+          updated_at?: string
           user_id: string
           value: number
         }
@@ -117,10 +121,12 @@ export type Database = {
           created_at?: string
           end_date?: string
           field?: string
+          group_id?: string | null
           id?: string
           mode?: string
           note?: string | null
           start_date?: string
+          updated_at?: string
           user_id?: string
           value?: number
         }
@@ -176,7 +182,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_group_accessible_to_user: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

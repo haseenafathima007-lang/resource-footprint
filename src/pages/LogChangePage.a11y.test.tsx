@@ -12,43 +12,15 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { axe } from "vitest-axe";
 import * as matchers from "vitest-axe/matchers";
-import { DashboardPage } from "./DashboardPage.tsx";
+import { LogChangePage } from "./LogChangePage.tsx";
 import { baselineRepository } from "@/services/supabase/baselineRepository.ts";
 import { deviationRepository } from "@/services/supabase/deviationRepository.ts";
 import factorsData from "@/data/factors.v1.json";
-import type { BaselineProfile } from "@/engine";
+import type { BaselineProfile, Deviation } from "@/engine";
 
 expect.extend(matchers);
 
-// Mock Recharts ResponsiveContainer to render children in jsdom
-vi.mock("recharts", async () => {
-  const actual = await vi.importActual<typeof import("recharts")>("recharts");
-  return {
-    ...actual,
-    ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-      <div data-testid="responsive-container" style={{ width: 500, height: 300 }}>
-        {children}
-      </div>
-    ),
-  };
-});
-
-// Mock matchMedia for jsdom
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: vi.fn().mockImplementation((query) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
-
-const defaultProfile: BaselineProfile = {
+const mockBaseline: BaselineProfile = {
   id: "b-1",
   userId: "user-1",
   effectiveFrom: "2026-01-01",
@@ -61,6 +33,18 @@ const defaultProfile: BaselineProfile = {
   laptopHoursPerDay: 6,
   laundryLoadsPerWeek: 4,
   laundryMachine: "topLoad",
+};
+
+const mockDeviation: Deviation = {
+  id: "dev-1",
+  startDate: "2026-07-01",
+  endDate: "2026-07-05",
+  field: "acHoursPerDay",
+  mode: "delta",
+  value: 3,
+  note: "Summer heatwave",
+  groupId: "group-100",
+  createdAt: "2026-07-01T00:00:00Z",
 };
 
 vi.mock("@/services/supabase/baselineRepository.ts", () => ({
@@ -79,32 +63,32 @@ vi.mock("@/services/supabase/deviationRepository.ts", () => ({
   },
 }));
 
-describe("DashboardPage Accessibility (a11y)", () => {
+describe("LogChangePage Accessibility (a11y)", () => {
   beforeEach(() => {
     document.documentElement.classList.remove("dark");
     vi.mocked(baselineRepository.getCurrentBaseline).mockResolvedValue({
       ok: true,
-      data: defaultProfile,
+      data: mockBaseline,
     });
     vi.mocked(baselineRepository.getBaselineHistory).mockResolvedValue({
       ok: true,
-      data: [defaultProfile],
+      data: [mockBaseline],
     });
     vi.mocked(deviationRepository.list).mockResolvedValue({
       ok: true,
-      data: [],
+      data: [mockDeviation],
     });
   });
 
   it("has no axe accessibility violations in LIGHT mode", async () => {
     const { container } = render(
-      <MemoryRouter initialEntries={["/dashboard"]}>
-        <DashboardPage />
+      <MemoryRouter initialEntries={["/log"]}>
+        <LogChangePage />
       </MemoryRouter>
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { level: 1, name: /resource dashboard/i })).toBeDefined();
+      expect(screen.getByRole("heading", { level: 1, name: /log a temporary change/i })).toBeDefined();
     });
 
     const results = await axe(container);
@@ -115,13 +99,13 @@ describe("DashboardPage Accessibility (a11y)", () => {
     document.documentElement.classList.add("dark");
 
     const { container } = render(
-      <MemoryRouter initialEntries={["/dashboard"]}>
-        <DashboardPage />
+      <MemoryRouter initialEntries={["/log"]}>
+        <LogChangePage />
       </MemoryRouter>
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { level: 1, name: /resource dashboard/i })).toBeDefined();
+      expect(screen.getByRole("heading", { level: 1, name: /log a temporary change/i })).toBeDefined();
     });
 
     const results = await axe(container);

@@ -67,8 +67,10 @@ export interface IBaselineRepository {
 export interface IDeviationRepository {
   list(range?: { startDate: string; endDate: string }): Promise<Result<Deviation[]>>;
   add(deviation: Omit<Deviation, 'id' | 'createdAt'>): Promise<Result<Deviation>>;
+  addMany(deviations: Omit<Deviation, 'id' | 'createdAt'>[]): Promise<Result<Deviation[]>>;
   update(id: string, deviation: Partial<Deviation>): Promise<Result<Deviation>>;
   remove(id: string): Promise<Result<void>>;
+  removeGroup(groupId: string): Promise<Result<void>>;
 }
 
 export interface IFactorRepository {

@@ -10,6 +10,8 @@ import { NotFoundPage } from "./pages/NotFoundPage.tsx";
 import { OnboardingPage } from "./pages/OnboardingPage.tsx";
 
 const DashboardPage = lazy(() => import("./pages/DashboardPage.tsx"));
+const LogChangePage = lazy(() => import("./pages/LogChangePage.tsx"));
+const MethodologyPage = lazy(() => import("./pages/MethodologyPage.tsx"));
 
 export function App() {
   return (
@@ -19,6 +21,20 @@ export function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route
+              path="/methodology"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center min-h-[50vh]">
+                      <p className="text-sm text-ink-muted animate-pulse">Loading methodology...</p>
+                    </div>
+                  }
+                >
+                  <MethodologyPage />
+                </Suspense>
+              }
+            />
             <Route
               path="/onboarding"
               element={
@@ -39,6 +55,22 @@ export function App() {
                     }
                   >
                     <DashboardPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/log"
+              element={
+                <ProtectedRoute>
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center min-h-[50vh]">
+                        <p className="text-sm text-ink-muted animate-pulse">Loading change logger...</p>
+                      </div>
+                    }
+                  >
+                    <LogChangePage />
                   </Suspense>
                 </ProtectedRoute>
               }
