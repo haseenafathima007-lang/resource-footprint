@@ -16,7 +16,10 @@ import {
 import { validateProfile } from '@/engine';
 
 export class SupabaseBaselineRepository implements IBaselineRepository {
-  constructor(private client: SupabaseClient<Database> = defaultClient) {}
+  constructor(
+    private client: SupabaseClient<Database> = defaultClient,
+    private clock: () => Date = () => new Date()
+  ) {}
 
   async getCurrentBaseline(): Promise<Result<BaselineProfile | null>> {
     try {
@@ -30,7 +33,11 @@ export class SupabaseBaselineRepository implements IBaselineRepository {
         });
       }
 
-      const today = new Date().toISOString().split('T')[0];
+      const now = this.clock();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const today = `${y}-${m}-${d}`;
 
       const { data, error } = await this.client
         .from('baseline_profiles')
@@ -129,7 +136,7 @@ export class SupabaseBaselineRepository implements IBaselineRepository {
       // Default effectiveFrom to client local date (YYYY-MM-DD) if not provided
       let effectiveFrom = profile.effectiveFrom;
       if (!effectiveFrom) {
-        const now = new Date();
+        const now = this.clock();
         const y = now.getFullYear();
         const m = String(now.getMonth() + 1).padStart(2, '0');
         const d = String(now.getDate()).padStart(2, '0');

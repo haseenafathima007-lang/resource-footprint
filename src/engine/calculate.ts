@@ -1,6 +1,7 @@
 import type {
   ActivityInput,
   ActivityResult,
+  BaselineProfile,
   Factor,
   FactorSetPayload,
   FactorsMap,
@@ -8,6 +9,7 @@ import type {
 } from './types.ts';
 import { EngineError } from './validation.ts';
 import { toFactorsMap } from './factors.ts';
+import { calculateProfile } from './profile.ts';
 
 export const ZERO_RANGE: Range = { low: 0, typical: 0, high: 0 };
 
@@ -145,4 +147,56 @@ export function calculate(
   }
 
   return { water, energy, waste };
+}
+
+export interface DailySavingsResult {
+  water: Range;
+  energy: Range;
+}
+
+/**
+ * Calculates per-day water and energy savings between a baseline profile and an actual profile.
+ * Used by goals and teams engine functions.
+ */
+export function calculateDailySavings(
+  baselineProfile: BaselineProfile,
+  actualProfile: BaselineProfile,
+  factorsInput: FactorsMap | FactorSetPayload | Factor[]
+): DailySavingsResult {
+  const factors = toFactorsMap(factorsInput);
+  const baseRes = calculateProfile(baselineProfile, factors);
+  const actRes = calculateProfile(actualProfile, factors);
+
+  function sortRange(low: number, typical: number, high: number): Range {
+    const vals = [low, typical, high].sort((a, b) => a - b);
+    return { low: vals[0], typical: vals[1], high: vals[2] };
+  }
+
+  return {
+    water: sortRange(
+      baseRes.water.low - actRes.water.low,
+      baseRes.water.typical - actRes.water.typical,
+      baseRes.water.high - actRes.water.high
+    ),
+    energy: sortRange(
+      baseRes.energy.low - actRes.energy.low,
+      baseRes.energy.typical - actRes.energy.typical,
+      baseRes.energy.high - actRes.energy.high
+    ),
+  };
+}
+
+/**
+ * Calculates relative normalized impact score across water and energy against benchmark references.
+ * Impact = (waterTypical / refWater) + (energyTypical / refEnergy)
+ */
+export function calculateRelativeImpact(
+  waterTypical: number,
+  energyTypical: number,
+  refWater: number,
+  refEnergy: number
+): number {
+  const wRef = refWater > 0 ? refWater : 250;
+  const eRef = energyTypical > 0 ? refEnergy : 6.0;
+  return (Math.abs(waterTypical) / wRef) + (Math.abs(energyTypical) / eRef);
 }

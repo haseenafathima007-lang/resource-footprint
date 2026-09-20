@@ -112,7 +112,6 @@ export class SupabaseGoalRepository implements IGoalRepository {
 
       const { data, error } = await this.client
         .from('goals')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .insert(insertData as any)
         .select()
         .single();

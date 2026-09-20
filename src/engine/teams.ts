@@ -5,8 +5,7 @@ import type {
   FactorsMap,
 } from './types.ts';
 import { EngineError, assertValidProfile } from './validation.ts';
-import { toFactorsMap } from './factors.ts';
-import { calculateProfile } from './profile.ts';
+import { calculateDailySavings } from './calculate.ts';
 import { eachDay, isValidISODate, compareISO } from './dates.ts';
 import {
   effectiveBaselineForDate,
@@ -83,26 +82,18 @@ export function memberDailySavings(
       continue;
     }
 
-    const factorsMap = toFactorsMap(rawFactors);
-
-    // Baseline daily usage snapshot
-    const baselineResult = calculateProfile(snapshot, factorsMap);
-
     // Effective actual daily usage on `day` considering baselines and deviations
     const effectiveRes = effectiveProfileForDate(
       history.length > 0 ? history : [snapshot],
       deviations,
       day
     );
-    const actualResult = calculateProfile(effectiveRes.profile, factorsMap);
-
-    const waterSaved = baselineResult.water.typical - actualResult.water.typical;
-    const energySaved = baselineResult.energy.typical - actualResult.energy.typical;
+    const dailySavingsRes = calculateDailySavings(snapshot, effectiveRes.profile, rawFactors);
 
     days.push({
       day,
-      water: waterSaved,
-      energy: energySaved,
+      water: dailySavingsRes.water.typical,
+      energy: dailySavingsRes.energy.typical,
     });
   }
 

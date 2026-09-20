@@ -1,5 +1,5 @@
 import type { BaselineProfile, Period, FactorsMap, FactorSetPayload, Factor } from "@/engine";
-import { compareProfiles, scaleToPeriod, toFactorsMap, EngineError } from "@/engine";
+import { compareProfiles, scaleToPeriod, toFactorsMap, calculateRelativeImpact, EngineError } from "@/engine";
 import { formatNumber, formatTypicalValue } from "./format.ts";
 
 export interface ScenarioHabits {
@@ -106,8 +106,8 @@ export function generateSummary(
     const waterTypical = Math.abs(scaled.water.typical);
     const energyTypical = Math.abs(scaled.energy.typical);
 
-    // Relative impact score using standard engine normalization factors
-    const impact = (waterTypical / refWaterDaily) + (energyTypical / refEnergyDaily);
+    // Relative impact score using standard engine normalization helper
+    const impact = calculateRelativeImpact(waterTypical, energyTypical, refWaterDaily, refEnergyDaily);
 
     if (impact > maxImpact) {
       maxImpact = impact;

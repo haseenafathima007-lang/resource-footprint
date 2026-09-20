@@ -8,6 +8,7 @@ import type {
 import { EngineError, assertValidProfile } from './validation.ts';
 import { toFactorsMap } from './factors.ts';
 import { calculateProfile } from './profile.ts';
+import { calculateDailySavings } from './calculate.ts';
 import { addDays, eachDay, compareISO, isValidISODate } from './dates.ts';
 import {
   effectiveBaselineForDate,
@@ -190,23 +191,9 @@ export function goalProgress({
       continue;
     }
 
-    const factors = toFactorsMap(versionFactorsInput);
-
-    // Reference snapshot evaluated with this day's factor set
-    const refDaily = calculateProfile(goal.referenceProfile, factors);
-
-    // Actual habit with deviations evaluated with this day's factor set
     const effectiveHabit = effectiveProfileForDate(history, deviations, day).profile;
-    const actDaily = calculateProfile(effectiveHabit, factors);
-
-    const refRange = refDaily[goal.resource];
-    const actRange = actDaily[goal.resource];
-
-    const dLow = refRange.low - actRange.low;
-    const dTyp = refRange.typical - actRange.typical;
-    const dHigh = refRange.high - actRange.high;
-
-    const daySaving = sortRange(dLow, dTyp, dHigh);
+    const dailySavingsRes = calculateDailySavings(goal.referenceProfile, effectiveHabit, versionFactorsInput);
+    const daySaving = dailySavingsRes[goal.resource];
 
     savedLow += daySaving.low;
     savedTypical += daySaving.typical;

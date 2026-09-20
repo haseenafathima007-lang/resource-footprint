@@ -115,10 +115,10 @@ describe('SupabaseBaselineRepository', () => {
     expect(mockSupabase.from).not.toHaveBeenCalled();
   });
 
-  it('preserves client local date (e.g. 2026-01-02 for 01:30 IST on Jan 2) when effectiveFrom is generated', async () => {
+  it('preserves client local date (e.g. 2026-01-02 for 01:30 IST on Jan 2) using injected clock', async () => {
     // 2026-01-01T20:00:00.000Z is 2026-01-02 01:30:00 in IST (UTC+5:30)
     const mockDate = new Date('2026-01-01T20:00:00.000Z');
-    vi.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
+    const clockRepo = new SupabaseBaselineRepository(mockSupabase as any, () => mockDate);
 
     const validProfile: any = {
       householdSize: 2,
@@ -154,7 +154,7 @@ describe('SupabaseBaselineRepository', () => {
     const mockUpsert = vi.fn().mockReturnValue({ select: mockSelect });
     mockSupabase.from.mockReturnValue({ upsert: mockUpsert });
 
-    const result = await repo.saveBaseline(validProfile);
+    const result = await clockRepo.saveBaseline(validProfile);
 
     expect(result.ok).toBe(true);
     expect(mockUpsert).toHaveBeenCalledWith(
@@ -163,7 +163,5 @@ describe('SupabaseBaselineRepository', () => {
       }),
       expect.anything()
     );
-
-    vi.restoreAllMocks();
   });
 });
