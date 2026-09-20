@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Droplets, Zap, User as UserIcon, LayoutDashboard, CalendarPlus, BookOpen, Target } from "lucide-react";
+import { Droplets, Zap, User as UserIcon, LayoutDashboard, CalendarPlus, BookOpen, Target, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth.tsx";
 import { ThemeToggle } from "./ThemeToggle.tsx";
 
@@ -59,6 +59,13 @@ export const Header: React.FC = () => {
               >
                 <CalendarPlus className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
                 <span className="hidden xs:inline sm:inline">Log</span>
+              </Link>
+              <Link
+                to="/teams"
+                className="inline-flex items-center justify-center gap-1 px-2.5 sm:px-3 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-medium rounded-lg border border-border bg-surface-raised hover:bg-surface-subtle text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <Users className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
+                <span className="hidden xs:inline sm:inline">Teams</span>
               </Link>
               <Link
                 to="/account"

@@ -64,6 +64,15 @@ export function formatNumber(val: number): string {
 }
 
 /**
+ * Formats a ratio (0.0 to 1.0) as a clean percentage (e.g., 0.15 -> "15%").
+ */
+export function formatPercent(val: number): string {
+  if (!Number.isFinite(val)) return '0%';
+  const pct = Math.round(val * 100);
+  return `${pct}%`;
+}
+
+/**
  * Common formatter for typical values used consistently by the SavingsCard,
  * SummaryCard, and sticky results bar. Rounds to 2 significant figures and formats.
  */

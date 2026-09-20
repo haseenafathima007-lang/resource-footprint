@@ -8,6 +8,10 @@ import {
   mapDbFactorSetToFactorSet,
   mapDbGoalToGoal,
   mapGoalToDbInsert,
+  mapRpcMyTeamToMyTeam,
+  mapRpcTeamMemberToTeamMember,
+  mapRpcTeamSummaryToTeamSummary,
+  mapRpcLeaderboardEntryToLeaderboardEntry,
   type DbProfileRow,
   type DbBaselineProfileRow,
   type DbDeviationRow,
@@ -260,6 +264,101 @@ describe('Services Mappers (DB snake_case <-> Engine camelCase)', () => {
       expect(goal.period).toBe('week');
       expect(goal.referenceProfile.householdSize).toBe(2);
       expect(goal.status).toBe('active');
+    });
+  });
+
+  describe('Team RPC Mappers', () => {
+    it('maps RPC my_teams row to MyTeam', () => {
+      const raw = {
+        id: 't-1',
+        name: 'Eco Team',
+        role: 'owner',
+        alias: 'AliceEco',
+        sharing: true,
+        member_count: 5,
+        target_resource: 'water',
+        target_amount: '500.00',
+        show_leaderboard: true,
+        created_at: '2026-09-20T00:00:00Z',
+        join_code: '23456789AB',
+      };
+
+      const team = mapRpcMyTeamToMyTeam(raw);
+      expect(team).toEqual({
+        id: 't-1',
+        name: 'Eco Team',
+        role: 'owner',
+        alias: 'AliceEco',
+        sharing: true,
+        memberCount: 5,
+        targetResource: 'water',
+        targetAmount: 500,
+        showLeaderboard: true,
+        createdAt: '2026-09-20T00:00:00Z',
+        joinCode: '23456789AB',
+      });
+    });
+
+    it('maps RPC team_members row to TeamMember', () => {
+      const raw = {
+        member_id: 'm-1',
+        alias: 'BobEco',
+        role: 'member',
+        sharing: false,
+        joined_at: '2026-09-20T01:00:00Z',
+      };
+
+      const member = mapRpcTeamMemberToTeamMember(raw);
+      expect(member).toEqual({
+        memberId: 'm-1',
+        alias: 'BobEco',
+        role: 'member',
+        sharing: false,
+        joinedAt: '2026-09-20T01:00:00Z',
+      });
+    });
+
+    it('maps RPC team_summary row to TeamSummary', () => {
+      const raw = {
+        member_count: 4,
+        sharing_count: 3,
+        visible: true,
+        days_window: 30,
+        total_water_saved_l: '162.00',
+        total_energy_saved_kwh: '4.698',
+        target_resource: 'water',
+        target_amount: '500.00',
+        target_progress: '0.324',
+      };
+
+      const summary = mapRpcTeamSummaryToTeamSummary(raw);
+      expect(summary.visible).toBe(true);
+      expect(summary.totalWaterSavedL).toBe(162);
+      expect(summary.totalEnergySavedKwh).toBe(4.698);
+      expect(summary.targetProgress).toBe(0.324);
+    });
+
+    it('maps RPC leaderboard row to LeaderboardEntry', () => {
+      const raw = {
+        rank: 1,
+        alias: 'AliceEco',
+        pct_water: 16,
+        pct_energy: 9,
+        pct_overall: 13,
+        days_counted: 3,
+        is_me: true,
+      };
+
+      const entry = mapRpcLeaderboardEntryToLeaderboardEntry(raw);
+      expect(entry).toEqual({
+        rank: 1,
+        alias: 'AliceEco',
+        pctWater: 16,
+        pctEnergy: 9,
+        pctOverall: 13,
+        daysCounted: 3,
+        isMe: true,
+      });
     });
   });
 });

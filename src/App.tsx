@@ -13,6 +13,8 @@ const DashboardPage = lazy(() => import("./pages/DashboardPage.tsx"));
 const LogChangePage = lazy(() => import("./pages/LogChangePage.tsx"));
 const MethodologyPage = lazy(() => import("./pages/MethodologyPage.tsx"));
 const GoalsPage = lazy(() => import("./pages/GoalsPage.tsx"));
+const TeamsPage = lazy(() => import("./pages/TeamsPage.tsx"));
+const TeamDetailPage = lazy(() => import("./pages/TeamDetailPage.tsx"));
 
 export function App() {
   return (
@@ -88,6 +90,38 @@ export function App() {
                     }
                   >
                     <GoalsPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teams"
+              element={
+                <ProtectedRoute>
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center min-h-[50vh]">
+                        <p className="text-sm text-ink-muted animate-pulse">Loading teams...</p>
+                      </div>
+                    }
+                  >
+                    <TeamsPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teams/:teamId"
+              element={
+                <ProtectedRoute>
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center min-h-[50vh]">
+                        <p className="text-sm text-ink-muted animate-pulse">Loading team details...</p>
+                      </div>
+                    }
+                  >
+                    <TeamDetailPage />
                   </Suspense>
                 </ProtectedRoute>
               }

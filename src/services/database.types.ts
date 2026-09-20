@@ -216,14 +216,192 @@ export type Database = {
         }
         Relationships: []
       }
+      team_contributions: {
+        Row: {
+          created_at: string
+          day: string
+          energy_saved_kwh: number
+          team_id: string
+          updated_at: string
+          user_id: string
+          water_saved_l: number
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          energy_saved_kwh: number
+          team_id: string
+          updated_at?: string
+          user_id: string
+          water_saved_l: number
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          energy_saved_kwh?: number
+          team_id?: string
+          updated_at?: string
+          user_id?: string
+          water_saved_l?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_contributions_team_id_user_id_fkey"
+            columns: ["team_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["team_id", "user_id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          alias: string
+          baseline_energy_kwh_day: number
+          baseline_water_l_day: number
+          created_at: string
+          joined_at: string
+          member_id: string
+          reference_profile: Json
+          role: string
+          sharing: boolean
+          team_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alias: string
+          baseline_energy_kwh_day: number
+          baseline_water_l_day: number
+          created_at?: string
+          joined_at?: string
+          member_id?: string
+          reference_profile: Json
+          role: string
+          sharing?: boolean
+          team_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alias?: string
+          baseline_energy_kwh_day?: number
+          baseline_water_l_day?: number
+          created_at?: string
+          joined_at?: string
+          member_id?: string
+          reference_profile?: Json
+          role?: string
+          sharing?: boolean
+          team_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          id: string
+          join_code: string
+          name: string
+          owner_id: string
+          show_leaderboard: boolean
+          target_amount: number | null
+          target_resource: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          join_code: string
+          name: string
+          owner_id: string
+          show_leaderboard?: boolean
+          target_amount?: number | null
+          target_resource?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          join_code?: string
+          name?: string
+          owner_id?: string
+          show_leaderboard?: boolean
+          target_amount?: number | null
+          target_resource?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      create_team: {
+        Args: {
+          p_alias: string
+          p_baseline_energy_kwh_day: number
+          p_baseline_water_l_day: number
+          p_name: string
+          p_reference_profile: Json
+          p_target_amount?: number
+          p_target_resource?: string
+        }
+        Returns: Json
+      }
+      delete_team: { Args: { p_team_id: string }; Returns: undefined }
+      get_leaderboard: { Args: { p_team_id: string }; Returns: Json }
+      get_my_teams: { Args: never; Returns: Json }
+      get_team_members: { Args: { p_team_id: string }; Returns: Json }
+      get_team_summary: { Args: { p_team_id: string }; Returns: Json }
+      internal_generate_join_code: { Args: never; Returns: string }
       is_group_accessible_to_user: {
         Args: { p_group_id: string; p_user_id: string }
         Returns: boolean
+      }
+      join_team: {
+        Args: {
+          p_alias: string
+          p_baseline_energy_kwh_day: number
+          p_baseline_water_l_day: number
+          p_code: string
+          p_reference_profile: Json
+        }
+        Returns: Json
+      }
+      leave_team: { Args: { p_team_id: string }; Returns: undefined }
+      remove_member: {
+        Args: { p_member_id: string; p_team_id: string }
+        Returns: undefined
+      }
+      rotate_code: { Args: { p_team_id: string }; Returns: string }
+      update_my_membership: {
+        Args: { p_alias: string; p_sharing: boolean; p_team_id: string }
+        Returns: undefined
+      }
+      update_team_settings: {
+        Args: {
+          p_show_leaderboard: boolean
+          p_target_amount: number
+          p_target_resource: string
+          p_team_id: string
+        }
+        Returns: undefined
+      }
+      upsert_my_contributions: {
+        Args: { p_rows: Json; p_team_id: string }
+        Returns: undefined
       }
     }
     Enums: {

@@ -9,3 +9,4 @@ export * from './dates.ts';
 export * from './deviations.ts';
 export * from './suggestions.ts';
 export * from './goals.ts';
+export * from './teams.ts';

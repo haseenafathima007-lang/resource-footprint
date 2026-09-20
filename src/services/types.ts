@@ -10,7 +10,11 @@ export type ServiceErrorCode =
   | 'NOT_FOUND'
   | 'NETWORK'
   | 'UNKNOWN'
-  | 'CONFLICT';
+  | 'CONFLICT'
+  | 'FORBIDDEN'
+  | 'LIMIT_REACHED'
+  | 'TEAM_FULL'
+  | 'INVALID_CODE';
 
 export interface ServiceError {
   code: ServiceErrorCode;
@@ -89,4 +93,108 @@ export interface IGoalRepository {
   ): Promise<Result<Goal>>;
   archive(id: string): Promise<Result<Goal>>;
   remove(id: string): Promise<Result<void>>;
+}
+
+// ============================================================================
+// Phase 7 Team Interfaces
+// ============================================================================
+
+export type TeamRole = 'owner' | 'member';
+export type TargetResource = 'water' | 'energy';
+
+export interface MyTeam {
+  id: string;
+  name: string;
+  role: TeamRole;
+  alias: string;
+  sharing: boolean;
+  memberCount: number;
+  targetResource: TargetResource | null;
+  targetAmount: number | null;
+  showLeaderboard: boolean;
+  createdAt: string;
+  joinCode: string | null;
+}
+
+export interface TeamMember {
+  memberId: string;
+  alias: string;
+  role: TeamRole;
+  sharing: boolean;
+  joinedAt: string;
+}
+
+export interface TeamSummary {
+  memberCount: number;
+  sharingCount: number;
+  visible: boolean;
+  daysWindow: number;
+  totalWaterSavedL: number | null;
+  totalEnergySavedKwh: number | null;
+  targetResource: TargetResource | null;
+  targetAmount: number | null;
+  targetProgress: number | null;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  alias: string;
+  pctWater: number;
+  pctEnergy: number;
+  pctOverall: number;
+  daysCounted: number;
+  isMe: boolean;
+}
+
+export interface CreateTeamInput {
+  name: string;
+  alias: string;
+  referenceProfile: BaselineProfile;
+  baselineWaterLDay: number;
+  baselineEnergyKwhDay: number;
+  targetResource?: TargetResource | null;
+  targetAmount?: number | null;
+}
+
+export interface JoinTeamInput {
+  code: string;
+  alias: string;
+  referenceProfile: BaselineProfile;
+  baselineWaterLDay: number;
+  baselineEnergyKwhDay: number;
+}
+
+export interface UpdateMembershipInput {
+  teamId: string;
+  alias: string;
+  sharing: boolean;
+}
+
+export interface UpdateTeamSettingsInput {
+  teamId: string;
+  showLeaderboard: boolean;
+  targetResource?: TargetResource | null;
+  targetAmount?: number | null;
+}
+
+export interface ContributionPayloadRow {
+  day: string;
+  water_saved_l: number;
+  energy_saved_kwh: number;
+}
+
+export interface ITeamRepository {
+  getMyTeams(): Promise<Result<MyTeam[]>>;
+  createTeam(input: CreateTeamInput): Promise<Result<{ id: string; joinCode: string }>>;
+  joinTeam(input: JoinTeamInput): Promise<Result<{ teamId: string; name: string }>>;
+  leaveTeam(teamId: string): Promise<Result<void>>;
+  deleteTeam(teamId: string): Promise<Result<void>>;
+  removeMember(teamId: string, memberId: string): Promise<Result<void>>;
+  rotateCode(teamId: string): Promise<Result<string>>;
+  updateMembership(input: UpdateMembershipInput): Promise<Result<void>>;
+  updateTeamSettings(input: UpdateTeamSettingsInput): Promise<Result<void>>;
+  upsertMyContributions(teamId: string, rows: ContributionPayloadRow[]): Promise<Result<void>>;
+  getTeamMembers(teamId: string): Promise<Result<TeamMember[]>>;
+  getTeamSummary(teamId: string): Promise<Result<TeamSummary>>;
+  getLeaderboard(teamId: string): Promise<Result<LeaderboardEntry[]>>;
 }

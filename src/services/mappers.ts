@@ -2,7 +2,15 @@ import type { BaselineProfile } from '../types/profile.ts';
 import type { Deviation, DeviationField } from '../types/deviation.ts';
 import type { FactorSetPayload } from '../types/factor.ts';
 import type { Goal, GoalInput } from '../engine/goals.ts';
-import type { UserProfile } from './types.ts';
+import type {
+  UserProfile,
+  MyTeam,
+  TeamMember,
+  TeamSummary,
+  LeaderboardEntry,
+  TargetResource,
+  TeamRole,
+} from './types.ts';
 
 // Database row interfaces (snake_case)
 export interface DbProfileRow {
@@ -234,5 +242,61 @@ export function mapGoalToDbInsert(
     start_date: startDate,
     reference_profile: referenceProfile as unknown as Record<string, unknown>,
     status: 'active',
+  };
+}
+
+// ============================================================================
+// Phase 7 Team Mappers
+// ============================================================================
+
+export function mapRpcMyTeamToMyTeam(row: Record<string, unknown>): MyTeam {
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    role: row.role as TeamRole,
+    alias: String(row.alias),
+    sharing: Boolean(row.sharing),
+    memberCount: Number(row.member_count),
+    targetResource: (row.target_resource as TargetResource) || null,
+    targetAmount: row.target_amount != null ? Number(row.target_amount) : null,
+    showLeaderboard: Boolean(row.show_leaderboard),
+    createdAt: String(row.created_at),
+    joinCode: row.join_code ? String(row.join_code) : null,
+  };
+}
+
+export function mapRpcTeamMemberToTeamMember(row: Record<string, unknown>): TeamMember {
+  return {
+    memberId: String(row.member_id),
+    alias: String(row.alias),
+    role: row.role as TeamRole,
+    sharing: Boolean(row.sharing),
+    joinedAt: String(row.joined_at),
+  };
+}
+
+export function mapRpcTeamSummaryToTeamSummary(row: Record<string, unknown>): TeamSummary {
+  return {
+    memberCount: Number(row.member_count),
+    sharingCount: Number(row.sharing_count),
+    visible: Boolean(row.visible),
+    daysWindow: Number(row.days_window ?? 30),
+    totalWaterSavedL: row.total_water_saved_l != null ? Number(row.total_water_saved_l) : null,
+    totalEnergySavedKwh: row.total_energy_saved_kwh != null ? Number(row.total_energy_saved_kwh) : null,
+    targetResource: (row.target_resource as TargetResource) || null,
+    targetAmount: row.target_amount != null ? Number(row.target_amount) : null,
+    targetProgress: row.target_progress != null ? Number(row.target_progress) : null,
+  };
+}
+
+export function mapRpcLeaderboardEntryToLeaderboardEntry(row: Record<string, unknown>): LeaderboardEntry {
+  return {
+    rank: Number(row.rank),
+    alias: String(row.alias),
+    pctWater: Number(row.pct_water),
+    pctEnergy: Number(row.pct_energy),
+    pctOverall: Number(row.pct_overall),
+    daysCounted: Number(row.days_counted),
+    isMe: Boolean(row.is_me),
   };
 }
