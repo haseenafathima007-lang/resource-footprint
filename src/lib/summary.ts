@@ -106,8 +106,8 @@ export function generateSummary(
     const waterTypical = Math.abs(scaled.water.typical);
     const energyTypical = Math.abs(scaled.energy.typical);
 
-    // Relative impact score against reference consumption from factor set
-    const impact = waterTypical / refWaterDaily + energyTypical / refEnergyDaily;
+    // Relative impact score using standard engine normalization factors
+    const impact = (waterTypical / refWaterDaily) + (energyTypical / refEnergyDaily);
 
     if (impact > maxImpact) {
       maxImpact = impact;

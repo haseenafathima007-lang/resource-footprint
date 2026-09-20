@@ -114,4 +114,56 @@ describe('SupabaseBaselineRepository', () => {
     }
     expect(mockSupabase.from).not.toHaveBeenCalled();
   });
+
+  it('preserves client local date (e.g. 2026-01-02 for 01:30 IST on Jan 2) when effectiveFrom is generated', async () => {
+    // 2026-01-01T20:00:00.000Z is 2026-01-02 01:30:00 in IST (UTC+5:30)
+    const mockDate = new Date('2026-01-01T20:00:00.000Z');
+    vi.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
+
+    const validProfile: any = {
+      householdSize: 2,
+      showerMinutesPerDay: 10,
+      showerHeater: 'electric',
+      acHoursPerDay: 4,
+      fanHoursPerDay: 8,
+      laptopHoursPerDay: 6,
+      laundryLoadsPerWeek: 3,
+      laundryMachine: 'frontLoad',
+      factorsVersion: '1.0.0',
+    };
+
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: {
+        id: 'b-123',
+        user_id: 'test-user-id',
+        effective_from: '2026-01-02',
+        household_size: 2,
+        shower_minutes_per_day: '10.00',
+        shower_heater: 'electric',
+        ac_hours_per_day: '4.00',
+        fan_hours_per_day: '8.00',
+        laptop_hours_per_day: '6.00',
+        laundry_loads_per_week: '3.00',
+        laundry_machine: 'frontLoad',
+        factors_version: '1.0.0',
+        created_at: '2026-01-01T20:00:00Z',
+      },
+      error: null,
+    });
+    const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockUpsert = vi.fn().mockReturnValue({ select: mockSelect });
+    mockSupabase.from.mockReturnValue({ upsert: mockUpsert });
+
+    const result = await repo.saveBaseline(validProfile);
+
+    expect(result.ok).toBe(true);
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        effective_from: '2026-01-02',
+      }),
+      expect.anything()
+    );
+
+    vi.restoreAllMocks();
+  });
 });

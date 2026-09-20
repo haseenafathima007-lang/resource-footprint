@@ -179,9 +179,9 @@ describe('DashboardPage Component', () => {
     // Monthly Energy footprint (~260 kWh / month)
     expect(screen.getByText(/~260/i)).toBeDefined();
 
-    // Sustainability score 45, band "Room to improve"
-    expect(screen.getByText('45')).toBeDefined();
-    expect(screen.getByText('Room to improve')).toBeDefined();
+    // Sustainability score 51, band "Getting there"
+    expect(screen.getByText('51')).toBeDefined();
+    expect(screen.getByText('Getting there')).toBeDefined();
   });
 
   it('period toggle changes totals between Month and Day', async () => {

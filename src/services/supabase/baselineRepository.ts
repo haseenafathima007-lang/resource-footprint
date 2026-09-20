@@ -126,8 +126,15 @@ export class SupabaseBaselineRepository implements IBaselineRepository {
         });
       }
 
-      // Default effectiveFrom to today if not provided
-      const effectiveFrom = profile.effectiveFrom || new Date().toISOString().split('T')[0];
+      // Default effectiveFrom to client local date (YYYY-MM-DD) if not provided
+      let effectiveFrom = profile.effectiveFrom;
+      if (!effectiveFrom) {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        effectiveFrom = `${y}-${m}-${d}`;
+      }
       const profileToSave: BaselineProfile = { ...profile, effectiveFrom };
 
       const insertData = mapBaselineToDbInsert(profileToSave, userId);

@@ -117,29 +117,26 @@ describe('dashboardModel - hand-computed arithmetic tests', () => {
      * - Reference Water = 250 L/day (reference.household.water)
      * - Reference Energy = 6.0 kWh/day (reference.household.energy)
      *
+     * Option 3 (Softer Bands) math:
      * - Water ratio = 164.29 / 250 = 0.65716
-     *   Water score = clamp(100 - (0.65716 - 0.5) * 100, 0, 100)
-     *               = 100 - (0.15716 * 100) = 100 - 15.716 = 84.284 -> 84.3
+     *   Water score = clamp(100 / (1 + 0.65716^1.8), 0, 100) = 68.0
      *
      * - Energy ratio = 8.699 / 6.0 = 1.449833...
-     *   Energy score = clamp(100 - (1.449833 - 0.5) * 100, 0, 100)
-     *                = 100 - (0.949833 * 100) = 100 - 94.9833 = 5.0167 -> 5.0
+     *   Energy score = clamp(100 / (1 + 1.449833^1.8), 0, 100) = 33.9
      *
-     * - Decimal hand arithmetic: (84.3 + 5.0) / 2 = 89.3 / 2 = 44.65 -> rounds to approx 45.
-     *   In JS IEEE-754 floating point arithmetic: (84.3 + 5.0) / 2 is 44.6499999999999985...,
-     *   so toFixed(1) in the untouched engine score.ts yields 44.6.
-     * - Band (< 50) = 'room-to-improve'
+     * - Hand arithmetic: (68.0 + 33.9) / 2 = 101.9 / 2 = 50.95 -> 51.0.
+     * - Band (50 <= overall < 75) = 'getting-there' ('Getting there')
      */
     const model = createDashboardModel(defaultProfile, factorsData, 'month');
 
     expect(model.score.referenceWater).toBe(250);
     expect(model.score.referenceEnergy).toBe(6);
-    expect(model.score.waterScore).toBe(84.3);
-    expect(model.score.energyScore).toBe(5.0);
-    expect(model.score.overall).toBe(44.6);
-    expect(Math.round(model.score.overall)).toBe(45);
-    expect(model.score.band).toBe('room-to-improve');
-    expect(model.score.bandLabel).toBe('Room to improve');
+    expect(model.score.waterScore).toBe(68.0);
+    expect(model.score.energyScore).toBe(33.9);
+    expect(model.score.overall).toBe(51.0);
+    expect(Math.round(model.score.overall)).toBe(51);
+    expect(model.score.band).toBe('getting-there');
+    expect(model.score.bandLabel).toBe('Getting there');
   });
 
   it('correctly reports allVerified status driven by factors', () => {
