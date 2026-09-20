@@ -1,3 +1,64 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --color-surface: 45 25% 97%;
+    --color-surface-raised: 0 0% 100%;
+    --color-surface-subtle: 45 20% 93%;
+    --color-text: 215 28% 13%;
+    --color-text-muted: 215 16% 46%;
+    --color-border: 214 20% 88%;
+    --color-primary: 158 64% 28%;
+    --color-primary-hover: 158 64% 22%;
+    --color-accent: 173 70% 36%;
+    --color-water: 204 90% 45%;
+    --color-water-bg: 204 90% 95%;
+    --color-energy: 36 92% 48%;
+    --color-energy-bg: 36 92% 95%;
+    --color-positive: 158 64% 32%;
+    --color-negative: 12 76% 52%;
+  }
+
+  .dark {
+    --color-surface: 215 28% 10%;
+    --color-surface-raised: 215 26% 15%;
+    --color-surface-subtle: 215 24% 19%;
+    --color-text: 210 20% 96%;
+    --color-text-muted: 215 16% 68%;
+    --color-border: 215 20% 24%;
+    --color-primary: 158 55% 44%;
+    --color-primary-hover: 158 55% 52%;
+    --color-accent: 173 65% 50%;
+    --color-water: 204 90% 60%;
+    --color-water-bg: 204 50% 16%;
+    --color-energy: 36 92% 58%;
+    --color-energy-bg: 36 50% 16%;
+    --color-positive: 158 55% 48%;
+    --color-negative: 12 80% 64%;
+  }
+
+  body {
+    background-color: hsl(var(--color-surface));
+    color: hsl(var(--color-text));
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--color-primary));
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

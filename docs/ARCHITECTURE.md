@@ -138,3 +138,35 @@ Repositories validate domain constraints against `PROFILE_BOUNDS` via the pure c
 - **Zero Client Service Role Key**: Only the `anon` / public key is bundled in the frontend. The `service_role` key never enters `src/`, `dist/`, or any environment accessible by client code.
 - **Strict Environment Separation**: Secrets and sensitive overrides live only in `.env.local`, which is strictly gitignored. `.env.example` provides non-sensitive placeholders.
 - **Granular Database Privileges**: Anonymous users are explicitly revoked access from all personal data tables.
+
+
+---
+
+## 7. Frontend Structure & Design System
+
+### Layering & Separation of Concerns
+1. **Pages (`src/pages/`)**: Route entry points (`LandingPage.tsx`, `NotFoundPage.tsx`).
+2. **Components (`src/components/`)**:
+   - `layout/`: App shell, navigation header, accessible skip-to-content link, footer, and theme switcher.
+   - `simulator/`: Presentational components for the What-If Simulator (`BaselinePanel`, `ScenarioPanel`, `ResultsPanel`, `SavingsCard`, `ComparisonBars`, `SummaryCard`, `PeriodToggle`, `NumberField`, `TrustBanner`).
+3. **Hooks (`src/hooks/`)**:
+   - `useSimulatorState.ts`: Manages baseline & scenario state, debounced screen-reader announcements, prefill logic, and URL query synchronization.
+   - `useTheme.ts`: Handles `light`, `dark`, and `system` preferences with localStorage persistence and `prefers-color-scheme` listeners.
+   - `useAnimatedNumber.ts`: Smooth number transitions via `requestAnimationFrame` under 400ms, disabled automatically when `prefers-reduced-motion` is detected.
+4. **Pure Libraries (`src/lib/`)**:
+   - `format.ts`: Outward-rounded intervals (lower bounds floored, upper bounds ceiled) and 2-3 significant figure formatters.
+   - `summary.ts`: Generates single-sentence summaries highlighting the dominant habit lever by running isolated `compareProfiles` runs.
+   - `urlState.ts`: Pure serialization and validated parsing of URL search parameters.
+5. **Engine Purity Guarantee**:
+   The What-If Simulator is completely **stateless and engine-driven**. All calculations, comparisons, and period conversions are executed through `@/engine`. Components never calculate raw water or energy consumption directly.
+
+### Semantic Theme Tokens
+Styling is configured in `tailwind.config.js` and `src/index.css` using HSL CSS variables:
+- `surface` / `surface-raised` / `surface-subtle`: Warm sand and crisp elevated card backgrounds in light mode; deep midnight slate tones in dark mode.
+- `ink` / `ink-muted`: High-contrast typography with accessible contrast ratios.
+- `border`: Subtle structural dividers.
+- `primary` / `primary-hover`: Deep forest green.
+- `accent`: Crisp teal.
+- `water` / `water-bg`: Blue shades dedicated exclusively to water usage across all screens.
+- `energy` / `energy-bg`: Amber shades dedicated exclusively to energy consumption across all screens.
+- `positive` / `negative`: Semantic status indicators, always paired with explicit icons and descriptive text to avoid relying on color alone.
