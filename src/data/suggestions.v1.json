@@ -1,0 +1,66 @@
+{
+  "version": "1.0.0",
+  "minImpact": 0.01,
+  "rules": [
+    {
+      "id": "shower.shorter",
+      "activity": "shower",
+      "kind": "habit",
+      "field": "showerMinutesPerDay",
+      "step": 3,
+      "floor": 4,
+      "title": "Shorten showers by 3 minutes",
+      "description": "Cutting daily shower time by 3 minutes saves substantial water and water-heating energy."
+    },
+    {
+      "id": "ac.less",
+      "activity": "cooling",
+      "kind": "habit",
+      "field": "acHoursPerDay",
+      "step": 1,
+      "floor": 0,
+      "title": "Reduce AC run time by 1 hour",
+      "description": "Using the air conditioner 1 hour less per day noticeably lowers daily electricity use."
+    },
+    {
+      "id": "fan.less",
+      "activity": "cooling",
+      "kind": "habit",
+      "field": "fanHoursPerDay",
+      "step": 2,
+      "floor": 0,
+      "title": "Reduce ceiling fan run time by 2 hours",
+      "description": "Turning off ceiling fans when rooms are unoccupied saves continuous baseline electricity."
+    },
+    {
+      "id": "laptop.less",
+      "activity": "cooling",
+      "kind": "habit",
+      "field": "laptopHoursPerDay",
+      "step": 1,
+      "floor": 0,
+      "title": "Reduce laptop active time by 1 hour",
+      "description": "Unplugging or sleeping personal devices when not in use trims computing power."
+    },
+    {
+      "id": "laundry.fewer",
+      "activity": "laundry",
+      "kind": "habit",
+      "field": "laundryLoadsPerWeek",
+      "step": 1,
+      "floor": 1,
+      "title": "Consolidate 1 laundry load per week",
+      "description": "Washing fuller loads saves both water and electric washing cycles."
+    },
+    {
+      "id": "laundry.frontLoad",
+      "activity": "laundry",
+      "kind": "equipment",
+      "field": "laundryMachine",
+      "targetValue": "frontLoad",
+      "currentValue": "topLoad",
+      "title": "Switch to front-load washing",
+      "description": "Front-load washing machines use significantly less water per cycle compared to top-loaders."
+    }
+  ]
+}

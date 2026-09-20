@@ -1,6 +1,7 @@
 import type { BaselineProfile } from '../types/profile.ts';
 import type { Deviation, DeviationField } from '../types/deviation.ts';
 import type { FactorSetPayload } from '../types/factor.ts';
+import type { Goal, GoalInput } from '../engine/goals.ts';
 import type { UserProfile } from './types.ts';
 
 // Database row interfaces (snake_case)
@@ -177,5 +178,61 @@ export function mapDbFactorSetToFactorSet(row: DbFactorSetRow): FactorSetPayload
     region: row.region,
     effectiveFrom: row.effective_from,
     factors: Array.isArray(payload?.factors) ? payload.factors : [],
+  };
+}
+
+export interface DbGoalRow {
+  id: string;
+  user_id: string;
+  resource: 'water' | 'energy';
+  period: 'week' | 'month';
+  target_amount: number | string;
+  start_date: string;
+  reference_profile: Record<string, unknown>;
+  status: 'active' | 'archived';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbGoalInsert {
+  user_id: string;
+  resource: 'water' | 'energy';
+  period: 'week' | 'month';
+  target_amount: number;
+  start_date: string;
+  reference_profile: Record<string, unknown>;
+  status?: 'active' | 'archived';
+}
+
+export function mapDbGoalToGoal(row: DbGoalRow): Goal {
+  const refSnapshot = row.reference_profile as unknown as BaselineProfile;
+  return {
+    id: row.id,
+    userId: row.user_id,
+    resource: row.resource,
+    period: row.period,
+    targetAmount: Number(row.target_amount),
+    startDate: row.start_date,
+    referenceProfile: refSnapshot,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapGoalToDbInsert(
+  input: GoalInput,
+  referenceProfile: BaselineProfile,
+  startDate: string,
+  userId: string
+): DbGoalInsert {
+  return {
+    user_id: userId,
+    resource: input.resource,
+    period: input.period,
+    target_amount: input.targetAmount,
+    start_date: startDate,
+    reference_profile: referenceProfile as unknown as Record<string, unknown>,
+    status: 'active',
   };
 }

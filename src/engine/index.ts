@@ -7,3 +7,5 @@ export * from './score.ts';
 export * from './profile.ts';
 export * from './dates.ts';
 export * from './deviations.ts';
+export * from './suggestions.ts';
+export * from './goals.ts';

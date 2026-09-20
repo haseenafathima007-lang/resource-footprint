@@ -1,14 +1,16 @@
 import type { User, Session } from '@supabase/supabase-js';
 import type { BaselineProfile } from '../types/profile.ts';
 import type { Deviation } from '../types/deviation.ts';
-import type { FactorSetPayload } from '../types/factor.ts';
+import type { FactorSetPayload, Factor } from '../types/factor.ts';
+import type { Goal, GoalInput, GoalStatus } from '../engine/goals.ts';
 
 export type ServiceErrorCode =
   | 'UNAUTHENTICATED'
   | 'VALIDATION'
   | 'NOT_FOUND'
   | 'NETWORK'
-  | 'UNKNOWN';
+  | 'UNKNOWN'
+  | 'CONFLICT';
 
 export interface ServiceError {
   code: ServiceErrorCode;
@@ -75,4 +77,16 @@ export interface IDeviationRepository {
 
 export interface IFactorRepository {
   getFactorSet(version?: string | 'latest'): Promise<Result<FactorSetPayload>>;
+}
+
+export interface IGoalRepository {
+  list(status?: GoalStatus): Promise<Result<Goal[]>>;
+  create(
+    input: GoalInput,
+    referenceProfile: BaselineProfile,
+    startDate: string,
+    factors: FactorSetPayload | Factor[]
+  ): Promise<Result<Goal>>;
+  archive(id: string): Promise<Result<Goal>>;
+  remove(id: string): Promise<Result<void>>;
 }

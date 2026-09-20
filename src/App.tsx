@@ -12,6 +12,7 @@ import { OnboardingPage } from "./pages/OnboardingPage.tsx";
 const DashboardPage = lazy(() => import("./pages/DashboardPage.tsx"));
 const LogChangePage = lazy(() => import("./pages/LogChangePage.tsx"));
 const MethodologyPage = lazy(() => import("./pages/MethodologyPage.tsx"));
+const GoalsPage = lazy(() => import("./pages/GoalsPage.tsx"));
 
 export function App() {
   return (
@@ -71,6 +72,22 @@ export function App() {
                     }
                   >
                     <LogChangePage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/goals"
+              element={
+                <ProtectedRoute>
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center min-h-[50vh]">
+                        <p className="text-sm text-ink-muted animate-pulse">Loading goals...</p>
+                      </div>
+                    }
+                  >
+                    <GoalsPage />
                   </Suspense>
                 </ProtectedRoute>
               }

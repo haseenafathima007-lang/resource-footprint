@@ -4,7 +4,7 @@ select plan(21);
 -- 1. Assert RLS is enabled on all public tables
 select set_eq(
   $$ select tablename::text from pg_tables where schemaname = 'public' and rowsecurity = true $$,
-  array['baseline_profiles', 'deviations', 'factor_sets', 'profiles']::text[],
+  array['baseline_profiles', 'deviations', 'factor_sets', 'goals', 'profiles']::text[],
   'All public tables must have row-level security enabled'
 );
 

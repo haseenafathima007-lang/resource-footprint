@@ -1,8 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import type { Period } from '@/engine';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import type { Period, Suggestion, BaselineProfile } from '@/engine';
 import { useBaseline } from '@/hooks/useBaseline.ts';
 import { useDeviations } from '@/hooks/useDeviations.ts';
+import { useSuggestions } from '@/hooks/useSuggestions.ts';
+import { useGoals } from '@/hooks/useGoals.ts';
 import { useToday, type ClockFunction } from '@/hooks/useToday.ts';
 import { createDashboardModel, calculate30DayDashboardModel } from '@/lib/dashboardModel.ts';
 import { PeriodToggle } from '@/components/simulator/PeriodToggle.tsx';
@@ -11,18 +13,21 @@ import { ScoreCard } from '@/components/dashboard/ScoreCard.tsx';
 import { BreakdownCharts } from '@/components/dashboard/BreakdownCharts.tsx';
 import { HistoryChart } from '@/components/dashboard/HistoryChart.tsx';
 import { ThirtyDayChart } from '@/components/dashboard/ThirtyDayChart.tsx';
+import { TopOpportunityCard } from '@/components/dashboard/TopOpportunityCard.tsx';
+import { SuggestionsSection } from '@/components/dashboard/SuggestionsSection.tsx';
+import { DashboardGoalsCard } from '@/components/dashboard/DashboardGoalsCard.tsx';
 import {
   DashboardSkeleton,
   DashboardError,
   DashboardEmpty,
 } from '@/components/dashboard/DashboardStates.tsx';
-import { TrustBanner } from '@/components/simulator/TrustBanner.tsx';
 import {
   Pencil,
   Sliders,
   CheckCircle2,
   AlertTriangle,
   CalendarPlus,
+  Target,
 } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -31,6 +36,7 @@ interface DashboardPageProps {
 
 export function DashboardPage({ clock }: DashboardPageProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const confirmationMessage = (location.state as { confirmation?: string })?.confirmation;
 
   useEffect(() => {
@@ -54,6 +60,8 @@ export function DashboardPage({ clock }: DashboardPageProps) {
   } = useDeviations();
 
   const { today } = useToday(clock);
+  const { suggestions, topOpportunity } = useSuggestions(currentBaseline, currentFactors);
+  const { activeGoals, isLoading: goalsLoading, error: goalsError } = useGoals(clock);
 
   // Period state: default Month, persisted in component state only
   const [period, setPeriod] = useState<Period>('month');
@@ -89,6 +97,19 @@ export function DashboardPage({ clock }: DashboardPageProps) {
       return null;
     }
   }, [currentBaseline, currentFactors, history, deviations, today]);
+
+  const handleAdoptSuggestion = useCallback(
+    (s: Suggestion) => {
+      if (!currentBaseline) return;
+      const proposedProfile: BaselineProfile = {
+        ...currentBaseline,
+        ...(s.kind === 'habit' ? { [s.field]: Number(s.to) } : {}),
+        ...(s.kind === 'equipment' ? { [s.field]: s.to as 'frontLoad' } : {}),
+      };
+      navigate('/onboarding', { state: { proposed: proposedProfile } });
+    },
+    [currentBaseline, navigate]
+  );
 
   const loading = baselineLoading || deviationsLoading;
   const error = baselineError || deviationsError;
@@ -163,9 +184,6 @@ export function DashboardPage({ clock }: DashboardPageProps) {
         </div>
       )}
 
-      {/* Trust Notice (driven by factors verified status) */}
-      <TrustBanner show={!dashboardData.allVerified} />
-
       {/* Dashboard Top Header & Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
@@ -182,10 +200,18 @@ export function DashboardPage({ clock }: DashboardPageProps) {
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Link
-            to="/log"
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-semibold rounded-xl bg-primary text-on-primary hover:bg-primary-hover transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            to="/goals"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-semibold rounded-xl bg-primary text-primary-ink hover:opacity-90 transition-opacity shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <CalendarPlus className="w-4 h-4" aria-hidden="true" />
+            <Target className="w-4 h-4" aria-hidden="true" />
+            <span>Goals</span>
+          </Link>
+
+          <Link
+            to="/log"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-medium rounded-xl border border-border bg-surface-raised hover:bg-surface-subtle text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <CalendarPlus className="w-4 h-4 text-primary" aria-hidden="true" />
             <span>Log a Change</span>
           </Link>
 
@@ -202,10 +228,38 @@ export function DashboardPage({ clock }: DashboardPageProps) {
             className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[44px] min-w-[44px] text-xs sm:text-sm font-medium rounded-xl border border-border bg-surface-raised hover:bg-surface-subtle text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Sliders className="w-4 h-4 text-accent" aria-hidden="true" />
-            <span>Try Simulator</span>
+            <span>Simulator</span>
           </Link>
 
           <PeriodToggle period={period} onChange={setPeriod} />
+        </div>
+      </div>
+
+      {/* Top Opportunity Card & Goals Summary Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section aria-labelledby="top-opportunity-heading" className="lg:col-span-2">
+          <h2 id="top-opportunity-heading" className="sr-only">
+            Top Reduction Opportunity
+          </h2>
+          {topOpportunity ? (
+            <TopOpportunityCard
+              suggestion={topOpportunity}
+              period={period}
+              householdSize={currentBaseline.householdSize}
+              onAdopt={handleAdoptSuggestion}
+            />
+          ) : (
+            <div className="p-5 rounded-2xl border border-border bg-surface-raised text-center text-xs text-ink-muted">
+              Your baseline habits are already optimal! No immediate suggestions found.
+            </div>
+          )}
+        </section>
+        <div className="lg:col-span-1">
+          <DashboardGoalsCard
+            activeGoals={activeGoals}
+            isLoading={goalsLoading}
+            error={goalsError}
+          />
         </div>
       </div>
 
@@ -218,6 +272,16 @@ export function DashboardPage({ clock }: DashboardPageProps) {
           <ScoreCard score={dashboardData.score} />
         </div>
       </div>
+
+      {/* Ways to Reduce Section (Suggestions Cards + Trust Notice) */}
+      <SuggestionsSection
+        baseline={currentBaseline}
+        suggestions={suggestions}
+        period={period}
+        onAdopt={handleAdoptSuggestion}
+        factorsVersion={currentFactors.version}
+        factorsRegion={currentFactors.region}
+      />
 
       {/* 30-Day Activity & Actuals Section */}
       {thirtyDayModel && (

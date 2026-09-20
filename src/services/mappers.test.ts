@@ -6,10 +6,13 @@ import {
   mapDbDeviationToDeviation,
   mapDeviationToDbInsert,
   mapDbFactorSetToFactorSet,
+  mapDbGoalToGoal,
+  mapGoalToDbInsert,
   type DbProfileRow,
   type DbBaselineProfileRow,
   type DbDeviationRow,
   type DbFactorSetRow,
+  type DbGoalRow,
 } from './mappers.ts';
 import type { BaselineProfile } from '../types/profile.ts';
 import type { Deviation } from '../types/deviation.ts';
@@ -198,6 +201,65 @@ describe('Services Mappers (DB snake_case <-> Engine camelCase)', () => {
       expect(mapped.version).toBe('1.0.0');
       expect(mapped.factors.length).toBe(1);
       expect(mapped.factors[0].id).toBe('shower.flow');
+    });
+  });
+
+  describe('Goal Mappers', () => {
+    const baselineSnapshot: BaselineProfile = {
+      id: 'snap-1',
+      userId: 'user-xyz',
+      effectiveFrom: '2026-09-01',
+      householdSize: 2,
+      showerMinutesPerDay: 10,
+      showerHeater: 'electric',
+      acHoursPerDay: 4,
+      fanHoursPerDay: 6,
+      laptopHoursPerDay: 6,
+      laundryLoadsPerWeek: 4,
+      laundryMachine: 'topLoad',
+      factorsVersion: '1.0.0',
+    };
+
+    it('maps GoalInput to DbGoalInsert', () => {
+      const insert = mapGoalToDbInsert(
+        { resource: 'water', period: 'week', targetAmount: 150 },
+        baselineSnapshot,
+        '2026-09-01',
+        'user-xyz'
+      );
+
+      expect(insert).toEqual({
+        user_id: 'user-xyz',
+        resource: 'water',
+        period: 'week',
+        target_amount: 150,
+        start_date: '2026-09-01',
+        reference_profile: baselineSnapshot,
+        status: 'active',
+      });
+    });
+
+    it('maps DbGoalRow to Goal with intact jsonb reference snapshot', () => {
+      const dbRow: DbGoalRow = {
+        id: 'goal-uuid-1',
+        user_id: 'user-xyz',
+        resource: 'water',
+        period: 'week',
+        target_amount: '150.00',
+        start_date: '2026-09-01',
+        reference_profile: baselineSnapshot as any,
+        status: 'active',
+        created_at: '2026-09-01T10:00:00Z',
+        updated_at: '2026-09-01T10:00:00Z',
+      };
+
+      const goal = mapDbGoalToGoal(dbRow);
+      expect(goal.id).toBe('goal-uuid-1');
+      expect(goal.targetAmount).toBe(150);
+      expect(goal.resource).toBe('water');
+      expect(goal.period).toBe('week');
+      expect(goal.referenceProfile.householdSize).toBe(2);
+      expect(goal.status).toBe('active');
     });
   });
 });
