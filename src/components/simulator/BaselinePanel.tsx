@@ -1,8 +1,17 @@
 import React from "react";
 import type { BaselineProfile } from "@/engine";
 import { PROFILE_BOUNDS } from "@/engine";
-import { Users, Droplets, Flame, Wind, Laptop, Shirt, Minus, Plus } from "lucide-react";
 import { NumberField } from "./NumberField.tsx";
+import {
+  Users,
+  Droplets,
+  Flame,
+  Wind,
+  Laptop,
+  Shirt,
+  Plus,
+  Minus,
+} from "lucide-react";
 
 interface BaselinePanelProps {
   baseline: BaselineProfile;
@@ -15,18 +24,6 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
   errors,
   onUpdate,
 }) => {
-  const handleHouseholdDec = () => {
-    if (baseline.householdSize > PROFILE_BOUNDS.householdSize.min) {
-      onUpdate("householdSize", baseline.householdSize - 1);
-    }
-  };
-
-  const handleHouseholdInc = () => {
-    if (baseline.householdSize < PROFILE_BOUNDS.householdSize.max) {
-      onUpdate("householdSize", baseline.householdSize + 1);
-    }
-  };
-
   return (
     <section
       aria-labelledby="baseline-heading"
@@ -34,46 +31,47 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
     >
       <div>
         <h2 id="baseline-heading" className="text-lg font-bold text-ink flex items-center gap-2">
-          <span>Current Habits</span>
+          <span>Your Baseline Habits</span>
           <span className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
             Baseline
           </span>
         </h2>
         <p className="text-sm text-ink-muted mt-1">
-          Define your household's baseline habits. Shared appliances (AC, fan, laundry) scale with household size.
+          Set your typical daily habits to calculate your estimated resource baseline.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* 1. Household Size Stepper */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* 1. Household Size Stepper (>= 44x44px touch targets) */}
         <div className="p-4 rounded-xl bg-surface-subtle border border-border flex flex-col gap-2">
-          <label htmlFor="baseline-householdSize" className="text-sm font-medium text-ink flex items-center gap-2">
-            <Users className="w-4 h-4 text-primary" aria-hidden="true" />
-            <span>Household Members</span>
-          </label>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-ink flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" aria-hidden="true" />
+              <span>Household Size</span>
+            </span>
+          </div>
           <div className="flex items-center gap-3 mt-1">
             <button
               type="button"
-              onClick={handleHouseholdDec}
+              onClick={() => onUpdate("householdSize", Math.max(1, baseline.householdSize - 1))}
               disabled={baseline.householdSize <= PROFILE_BOUNDS.householdSize.min}
               aria-label="Decrease household size"
-              className="w-8 h-8 rounded-lg border border-border bg-surface hover:bg-surface-raised disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg border border-border bg-surface hover:bg-surface-raised disabled:opacity-40 disabled:cursor-not-allowed text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <Minus className="w-4 h-4" aria-hidden="true" />
             </button>
             <span
-              id="baseline-householdSize"
               aria-live="polite"
-              className="text-base font-bold text-ink w-8 text-center"
+              className="text-lg font-bold text-ink min-w-[2rem] text-center"
             >
               {baseline.householdSize}
             </span>
             <button
               type="button"
-              onClick={handleHouseholdInc}
+              onClick={() => onUpdate("householdSize", Math.min(PROFILE_BOUNDS.householdSize.max, baseline.householdSize + 1))}
               disabled={baseline.householdSize >= PROFILE_BOUNDS.householdSize.max}
               aria-label="Increase household size"
-              className="w-8 h-8 rounded-lg border border-border bg-surface hover:bg-surface-raised disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg border border-border bg-surface hover:bg-surface-raised disabled:opacity-40 disabled:cursor-not-allowed text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <Plus className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -99,6 +97,7 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
             value={baseline.showerMinutesPerDay}
             min={PROFILE_BOUNDS.showerMinutesPerDay.min}
             max={PROFILE_BOUNDS.showerMinutesPerDay.max}
+            field="showerMinutesPerDay"
             error={errors.showerMinutesPerDay}
             onChange={(val) => onUpdate("showerMinutesPerDay", val)}
           />
@@ -120,7 +119,7 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
               role="radio"
               aria-checked={baseline.showerHeater === "electric"}
               onClick={() => onUpdate("showerHeater", "electric")}
-              className={`px-3 py-2 text-xs font-semibold rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`min-h-[44px] px-3 py-2 text-xs font-semibold rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 baseline.showerHeater === "electric"
                   ? "bg-surface-raised text-energy shadow-sm border border-border"
                   : "text-ink-muted hover:text-ink"
@@ -133,7 +132,7 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
               role="radio"
               aria-checked={baseline.showerHeater === "none"}
               onClick={() => onUpdate("showerHeater", "none")}
-              className={`px-3 py-2 text-xs font-semibold rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`min-h-[44px] px-3 py-2 text-xs font-semibold rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 baseline.showerHeater === "none"
                   ? "bg-surface-raised text-ink shadow-sm border border-border"
                   : "text-ink-muted hover:text-ink"
@@ -157,6 +156,7 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
             value={baseline.acHoursPerDay}
             min={PROFILE_BOUNDS.acHoursPerDay.min}
             max={PROFILE_BOUNDS.acHoursPerDay.max}
+            field="acHoursPerDay"
             error={errors.acHoursPerDay}
             onChange={(val) => onUpdate("acHoursPerDay", val)}
           />
@@ -175,6 +175,7 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
             value={baseline.fanHoursPerDay}
             min={PROFILE_BOUNDS.fanHoursPerDay.min}
             max={PROFILE_BOUNDS.fanHoursPerDay.max}
+            field="fanHoursPerDay"
             error={errors.fanHoursPerDay}
             onChange={(val) => onUpdate("fanHoursPerDay", val)}
           />
@@ -193,6 +194,7 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
             value={baseline.laptopHoursPerDay}
             min={PROFILE_BOUNDS.laptopHoursPerDay.min}
             max={PROFILE_BOUNDS.laptopHoursPerDay.max}
+            field="laptopHoursPerDay"
             error={errors.laptopHoursPerDay}
             onChange={(val) => onUpdate("laptopHoursPerDay", val)}
           />
@@ -211,6 +213,7 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
             value={baseline.laundryLoadsPerWeek}
             min={PROFILE_BOUNDS.laundryLoadsPerWeek.min}
             max={PROFILE_BOUNDS.laundryLoadsPerWeek.max}
+            field="laundryLoadsPerWeek"
             error={errors.laundryLoadsPerWeek}
             onChange={(val) => onUpdate("laundryLoadsPerWeek", val)}
           />
@@ -232,7 +235,7 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
               role="radio"
               aria-checked={baseline.laundryMachine === "topLoad"}
               onClick={() => onUpdate("laundryMachine", "topLoad")}
-              className={`px-3 py-2 text-xs font-semibold rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`min-h-[44px] px-3 py-2 text-xs font-semibold rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 baseline.laundryMachine === "topLoad"
                   ? "bg-surface-raised text-primary shadow-sm border border-border"
                   : "text-ink-muted hover:text-ink"
@@ -245,7 +248,7 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
               role="radio"
               aria-checked={baseline.laundryMachine === "frontLoad"}
               onClick={() => onUpdate("laundryMachine", "frontLoad")}
-              className={`px-3 py-2 text-xs font-semibold rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`min-h-[44px] px-3 py-2 text-xs font-semibold rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 baseline.laundryMachine === "frontLoad"
                   ? "bg-surface-raised text-primary shadow-sm border border-border"
                   : "text-ink-muted hover:text-ink"

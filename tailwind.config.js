@@ -21,7 +21,9 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--color-primary) / <alpha-value>)",
           hover: "hsl(var(--color-primary-hover) / <alpha-value>)",
+          on: "hsl(var(--color-on-primary) / <alpha-value>)",
         },
+        "on-primary": "hsl(var(--color-on-primary) / <alpha-value>)",
         accent: "hsl(var(--color-accent) / <alpha-value>)",
         water: {
           DEFAULT: "hsl(var(--color-water) / <alpha-value>)",

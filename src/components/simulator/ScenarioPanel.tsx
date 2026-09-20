@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import type { BaselineProfile } from "@/engine";
 import { PROFILE_BOUNDS, validateProfile } from "@/engine";
-import { TrendingDown, TrendingUp, Minus, RotateCcw } from "lucide-react";
-import { formatNumber } from "@/lib/format.ts";
 import type { ScenarioHabits } from "@/lib/summary.ts";
+import { formatNumber } from "@/lib/format.ts";
+import { TrendingDown, TrendingUp, Minus, RotateCcw } from "lucide-react";
 
 interface ScenarioPanelProps {
   baseline: BaselineProfile;
@@ -95,9 +95,14 @@ const ScenarioControlRow: React.FC<ScenarioControlRowProps> = ({
   const [rawText, setRawText] = useState<string>(String(sVal));
   const [localError, setLocalError] = useState<string | null>(null);
 
+  // Restore the guard so raw text only resets when Number(rawText) differs from incoming value
   useEffect(() => {
+    if (rawText !== "" && Number(rawText) === sVal) {
+      return;
+    }
     setRawText(String(sVal));
     setLocalError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sVal]);
 
   const delta = sVal - bVal;
@@ -109,25 +114,21 @@ const ScenarioControlRow: React.FC<ScenarioControlRowProps> = ({
     const raw = e.target.value;
     setRawText(raw);
 
-    if (raw.trim() === "") {
-      setLocalError("Value is required");
-      return;
-    }
+    const testVal = raw.trim() === "" ? NaN : Number(raw);
+    const errMap = validateProfile({ [ctrl.key]: testVal });
 
-    const parsed = Number(raw);
-    if (!Number.isFinite(parsed)) {
-      setLocalError("Please enter a valid number");
-      return;
-    }
-
-    const errMap = validateProfile({ [ctrl.key]: parsed });
     if (errMap && errMap[ctrl.key]) {
       setLocalError(errMap[ctrl.key]);
       return;
     }
 
+    if (raw.trim() === "" || !Number.isFinite(testVal)) {
+      setLocalError("Please enter a valid number");
+      return;
+    }
+
     setLocalError(null);
-    onUpdate(ctrl.key, parsed);
+    onUpdate(ctrl.key, testVal);
   };
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,7 +183,7 @@ const ScenarioControlRow: React.FC<ScenarioControlRowProps> = ({
             value={Math.min(sVal, ctrl.sliderMax)}
             onChange={handleSliderChange}
             aria-label={`${ctrl.label} slider`}
-            className="w-full accent-primary cursor-pointer h-2 bg-border rounded-lg appearance-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="w-full accent-primary cursor-pointer"
           />
           <div className="flex justify-between text-[11px] text-ink-muted mt-1">
             <span>{ctrl.sliderMin}</span>
@@ -201,7 +202,7 @@ const ScenarioControlRow: React.FC<ScenarioControlRowProps> = ({
             onChange={handleInputChange}
             aria-label={`${ctrl.label} numeric input`}
             aria-invalid={Boolean(activeError)}
-            className={`w-full px-2.5 py-1.5 text-sm font-semibold rounded-lg border bg-surface-raised text-ink text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+            className={`w-full min-h-[44px] px-2.5 py-1.5 text-sm font-semibold rounded-lg border bg-surface-raised text-ink text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
               activeError
                 ? "border-negative focus-visible:ring-negative"
                 : "border-border hover:border-ink-muted"
@@ -252,7 +253,7 @@ export const ScenarioPanel: React.FC<ScenarioPanelProps> = ({
           type="button"
           onClick={onReset}
           disabled={!hasAnyChange}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-border bg-surface hover:bg-surface-subtle text-ink-muted hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-xs font-semibold rounded-lg border border-border bg-surface hover:bg-surface-subtle text-ink-muted hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
           <span>Reset changes</span>

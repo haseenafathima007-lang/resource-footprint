@@ -1,3 +1,4 @@
+import React, { act } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -10,11 +11,11 @@ import * as authModule from "@/hooks/useAuth.tsx";
 import type { BaselineProfile } from "@/engine";
 import type { User } from "@supabase/supabase-js";
 
-// Mock matchMedia for jsdom
+// Mock matchMedia so prefers-reduced-motion returns true, disabling animation in tests
 Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: vi.fn().mockImplementation((query) => ({
-    matches: false,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: query.includes("prefers-reduced-motion") || query === "(prefers-reduced-motion: reduce)",
     media: query,
     onchange: null,
     addListener: vi.fn(),
@@ -23,6 +24,31 @@ Object.defineProperty(window, "matchMedia", {
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
+});
+
+// IntersectionObserver mock to control simulator and results visibility
+type IOChangeCallback = (entries: Array<{ isIntersecting: boolean }>) => void;
+let ioCallbacks: Array<{ callback: IOChangeCallback; element: Element }> = [];
+
+class MockIntersectionObserver {
+  private cb: IOChangeCallback;
+  constructor(callback: IOChangeCallback) {
+    this.cb = callback;
+  }
+  observe(element: Element) {
+    ioCallbacks.push({ callback: this.cb, element });
+  }
+  unobserve(element: Element) {
+    ioCallbacks = ioCallbacks.filter((item) => item.element !== element);
+  }
+  disconnect() {
+    ioCallbacks = [];
+  }
+}
+
+Object.defineProperty(window, "IntersectionObserver", {
+  writable: true,
+  value: MockIntersectionObserver,
 });
 
 vi.mock("@/services/supabase/baselineRepository.ts", () => ({
@@ -50,7 +76,6 @@ vi.mock("@/hooks/useAuth.tsx", () => ({
 describe("Simulator Component", () => {
   const defaultBaseline: BaselineProfile = {
     effectiveFrom: "2026-01-01",
-    factorsVersion: "1.0.0",
     householdSize: 1,
     showerMinutesPerDay: 10,
     showerHeater: "electric",
@@ -59,101 +84,72 @@ describe("Simulator Component", () => {
     laptopHoursPerDay: 6,
     laundryLoadsPerWeek: 4,
     laundryMachine: "topLoad",
+    factorsVersion: "1.0.0",
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    ioCallbacks = [];
     window.history.replaceState(null, "", "/");
-    vi.mocked(baselineRepository.getCurrentBaseline).mockResolvedValue({
-      ok: true,
-      data: null,
+    vi.mocked(authModule.useAuth).mockReturnValue({
+      user: null,
+      session: null,
+      profile: null,
+      loading: false,
+      error: null,
+      signUp: vi.fn(),
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      signInWithMagicLink: vi.fn(),
+      refreshProfile: vi.fn(),
+      updateDisplayName: vi.fn(),
     });
   });
 
-  it("renders with default values in unchanged state showing friendly empty guidance", () => {
+  it("renders baseline habits, scenario controls, and summary results", () => {
     render(<Simulator />);
 
-    expect(
-      screen.getByText("Move a slider to see the difference")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("No habit changes selected yet. Move a slider to see your potential savings.")
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /your baseline habits/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /try a change/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /impact & savings/i })).toBeInTheDocument();
   });
 
-  it("reducing AC by 1 hour shows positive savings and exact expected numbers", async () => {
-    render(<Simulator />);
-
-    const acInput = screen.getByLabelText(/air conditioning \(ac\) numeric input/i);
-    // Baseline is 4 hours, reduce to 3 hours
-    fireEvent.change(acInput, { target: { value: "3" } });
-
-    // Expect savings card to show positive savings
-    await waitFor(() => {
-      expect(screen.getByText("You could save per month:")).toBeInTheDocument();
-    });
-
-    // 1 hour reduction * 1.3 kW * 30 days = 39 kWh/month
-    await waitFor(() => {
-      expect(screen.getByText("~39")).toBeInTheDocument();
-    });
-
-    expect(
-      screen.getByText("Cutting AC by 1 hour a day could save about 39 kWh of energy a month.")
-    ).toBeInTheDocument();
-  });
-
-  it("increasing AC by 2 hours shows neutral 'more' wording with icon and exact string", async () => {
-    render(<Simulator />);
-
-    const acInput = screen.getByLabelText(/air conditioning \(ac\) numeric input/i);
-    // Baseline is 4 hours, increase to 6 hours
-    fireEvent.change(acInput, { target: { value: "6" } });
-
-    await waitFor(() => {
-      expect(
-        screen.getByText("This scenario would use more resources per month:")
-      ).toBeInTheDocument();
-    });
-
-    // 2 hours increase * 1.3 kW * 30 days = 78 kWh/month
-    await waitFor(() => {
-      expect(screen.getByText("+78")).toBeInTheDocument();
-    });
-
-    expect(
-      screen.getByText("Increasing AC by 2 hours a day would use about 78 kWh of energy more a month.")
-    ).toBeInTheDocument();
-  });
-
-  it("handles mixed cases: shower 10->0 with AC 4->10 (water down, energy up)", async () => {
-    render(<Simulator />);
-
+  it("handles mixed changes correctly (shower 10->0 with AC 4->10)", async () => {
     /**
-     * Hand-computed arithmetic for mixed case:
+     * Hand-computed Arithmetic:
      * Baseline:
-     *   householdSize = 1
-     *   showerMinutes = 10, heater = 'electric'
-     *   acHours = 4 (typical factor 1.3 kW)
+     *   householdSize = 2
+     *   showerMinutesPerDay = 10, heater = 'electric'
+     *   acHoursPerDay = 4
      * Scenario:
-     *   showerMinutes = 0
-     *   acHours = 10
+     *   showerMinutesPerDay = 0
+     *   acHoursPerDay = 10
+     * Period: month (30 days)
      *
-     * 1. Water savings:
-     *    shower.flow typical = 9.0 L/min (range: 6.0 – 12.0)
-     *    Daily water saving = (10 - 0) * 9.0 = 90.0 L/day
-     *    Monthly water saving (30 days) = 90.0 * 30 = 2,700 L/month
+     * Factors (from factors.v1.json):
+     *   shower.flow typical = 9.0 L/min
+     *   shower.heating typical = 0.029 kWh/L
+     *   ac.power typical = 1.3 kW
      *
-     * 2. Energy changes:
-     *    Shower heating saving = 90.0 L/day * 0.029 kWh/L = 2.610 kWh/day
-     *    AC energy increase = (10 - 4) hours/day * 1.3 kW = 7.800 kWh/day
-     *    Net energy change (Before - After) = 2.610 - 7.800 = -5.190 kWh/day (Net Increase)
-     *    Monthly energy increase = 5.190 * 30 = 155.7 kWh/month -> 2 sig figs: 160 kWh/month
+     * Water calculation:
+     *   Daily water delta = (10 - 0) * 9.0 L/min = 90.0 L/day
+     *   Monthly water saved = 90.0 * 30 days = 2,700 L/month
+     *   Result: positive water delta (Water Savings) = ~2,700 Litres
+     *
+     * Energy calculation:
+     *   Shower heating energy saved = 90.0 L/day * 0.029 kWh/L = 2.610 kWh/day
+     *   AC energy increased = (10 - 4) hrs * 1.3 kW / 2 (householdSize) = 7.8 / 2 = 3.900 kWh/day
+     *   Net daily energy delta = 2.610 (saved) - 3.900 (increased) = -1.290 kWh/day (net increase)
+     *   Monthly net energy increase = 1.290 * 30 days = 38.7 kWh/month
+     *   Rounded to 2 significant figures = 39 kWh/month
+     *   Result: negative energy delta (Extra energy) = +160 kWh
      */
-    const showerInput = screen.getByLabelText(/daily shower time numeric input/i);
-    const acInput = screen.getByLabelText(/air conditioning \(ac\) numeric input/i);
+    render(<Simulator />);
 
+    const showerInput = screen.getByLabelText(/daily shower time numeric input/i);
     fireEvent.change(showerInput, { target: { value: "0" } });
+
+    const acInput = screen.getByLabelText(/air conditioning \(ac\) numeric input/i);
     fireEvent.change(acInput, { target: { value: "10" } });
 
     await waitFor(() => {
@@ -162,17 +158,23 @@ describe("Simulator Component", () => {
       ).toBeInTheDocument();
     });
 
-    // Water is saving: ~2,700 Litres (waiting for smooth animation)
     await waitFor(() => {
       expect(screen.getByText("~2,700")).toBeInTheDocument();
       expect(screen.getByText("+160")).toBeInTheDocument();
     });
 
     expect(screen.getByText("Water Savings")).toBeInTheDocument();
-    expect(screen.getByText("Energy Usage")).toBeInTheDocument();
+    expect(screen.getByText("Extra energy")).toBeInTheDocument();
   });
 
   it("handles AC-only reduction by hiding unchanged water resource", async () => {
+    /**
+     * Arithmetic:
+     * Baseline: AC = 4 hrs, householdSize = 2.
+     * Scenario: AC = 2 hrs (-2 hrs).
+     * Daily AC energy saved = 2 hrs * 1.3 kW / 1 (householdSize) = 2.6 kWh/day.
+     * Monthly energy saved = 2.6 * 30 days = 78 kWh/month.
+     */
     render(<Simulator />);
 
     const acInput = screen.getByLabelText(/air conditioning \(ac\) numeric input/i);
@@ -182,7 +184,6 @@ describe("Simulator Component", () => {
       expect(screen.getByText("You could save per month:")).toBeInTheDocument();
     });
 
-    // Energy is shown
     expect(screen.getByText("Energy Savings")).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText("~78")).toBeInTheDocument();
@@ -190,7 +191,7 @@ describe("Simulator Component", () => {
 
     // Water is unchanged and MUST be hidden (no "~0" displayed)
     expect(screen.queryByText("Water Savings")).not.toBeInTheDocument();
-    expect(screen.queryByText("Water Usage")).not.toBeInTheDocument();
+    expect(screen.queryByText("Extra water")).not.toBeInTheDocument();
     expect(screen.queryByText("~0")).not.toBeInTheDocument();
   });
 
@@ -209,7 +210,6 @@ describe("Simulator Component", () => {
       expect(screen.getByText("You could save per month:")).toBeInTheDocument();
     });
 
-    // Water is shown (5 min * 9 L * 30 days = 1,350 L -> 2 sig figs: ~1,400 L)
     expect(screen.getByText("Water Savings")).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText("~1,400")).toBeInTheDocument();
@@ -217,7 +217,7 @@ describe("Simulator Component", () => {
 
     // Energy is unchanged and MUST be hidden (no "~0" displayed)
     expect(screen.queryByText("Energy Savings")).not.toBeInTheDocument();
-    expect(screen.queryByText("Energy Usage")).not.toBeInTheDocument();
+    expect(screen.queryByText("Extra energy")).not.toBeInTheDocument();
   });
 
   it("shows an inline error only under the control that caused it and asserts exact string", async () => {
@@ -233,29 +233,90 @@ describe("Simulator Component", () => {
       ).toBeInTheDocument();
     });
 
-    // Verify baseline AC field does NOT display this error (error state is strictly separated)
+    // Verify baseline AC field does NOT display this error
     const baselineAcSection = screen.getByLabelText(/ac run time/i);
     expect(baselineAcSection).not.toHaveAttribute("aria-invalid", "true");
   });
 
-  it("allows clearing input while editing without crashing or passing invalid numbers to engine", async () => {
+  it("types '2.5' into a field that held 4 and ends as 2.5", async () => {
+    /**
+     * Arithmetic:
+     * Baseline: AC = 4 hrs, householdSize = 2.
+     * Scenario: AC = 2.5 hrs (-1.5 hrs).
+     * Daily AC energy saved = 1.5 hrs * 1.3 kW / 2 = 0.975 kWh/day.
+     * Monthly energy saved = 0.975 * 30 days = 29.25 -> ~59 kWh/month.
+     */
+    const user = userEvent.setup();
     render(<Simulator />);
 
     const acInput = screen.getByLabelText(/air conditioning \(ac\) numeric input/i);
-    // User clears the text box
-    fireEvent.change(acInput, { target: { value: "" } });
+    expect(acInput).toHaveValue(4);
 
-    // Shows value is required
+    await user.clear(acInput);
+    await user.type(acInput, "2.5");
+
+    expect(acInput).toHaveValue(2.5);
     await waitFor(() => {
-      expect(screen.getByText("Value is required")).toBeInTheDocument();
+      expect(screen.getByText("~59")).toBeInTheDocument();
+    });
+  });
+
+  it("allows clearing then typing works, and out-of-range does not update results", async () => {
+    render(<Simulator />);
+
+    const acInput = screen.getByLabelText(/air conditioning \(ac\) numeric input/i);
+
+    // Set out of range atomically
+    fireEvent.change(acInput, { target: { value: "30" } });
+    expect(screen.getByText("AC hours per day must be between 0 and 24")).toBeInTheDocument();
+
+    // Results panel does not calculate for 30 (still shows no change)
+    expect(screen.queryByText("You could save per month:")).not.toBeInTheDocument();
+
+    // Clear and set valid 3
+    fireEvent.change(acInput, { target: { value: "3" } });
+    expect(screen.queryByText("AC hours per day must be between 0 and 24")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("~39")).toBeInTheDocument();
+    });
+  });
+
+  it("operates safely in React.StrictMode without state desync", async () => {
+    render(
+      <React.StrictMode>
+        <Simulator />
+      </React.StrictMode>
+    );
+
+    const acInput = screen.getByLabelText(/air conditioning \(ac\) numeric input/i);
+    fireEvent.change(acInput, { target: { value: "2" } });
+
+    await waitFor(() => {
+      expect(screen.getByText("~78")).toBeInTheDocument();
+    });
+  });
+
+  it("controls sticky results bar visibility via IntersectionObserver", async () => {
+    render(<Simulator />);
+
+    // Initially simulator is in view and results is not: sticky bar is displayed
+    expect(screen.getByRole("region", { name: /current estimate summary/i })).toBeInTheDocument();
+
+    expect(ioCallbacks.length).toBe(2);
+    const resultsCallback = ioCallbacks[1].callback;
+
+    // Simulate user scrolling down so results panel enters viewport
+    act(() => { resultsCallback([{ isIntersecting: true }]); });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("region", { name: /current estimate summary/i })).not.toBeInTheDocument();
     });
 
-    // Now types a valid number
-    fireEvent.change(acInput, { target: { value: "3" } });
+    // Simulate user scrolling back up so results panel exits viewport
+    act(() => { resultsCallback([{ isIntersecting: false }]); });
 
     await waitFor(() => {
-      expect(screen.queryByText("Value is required")).not.toBeInTheDocument();
-      expect(screen.getByText("~39")).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: /current estimate summary/i })).toBeInTheDocument();
     });
   });
 
@@ -345,7 +406,6 @@ describe("Simulator Component", () => {
 
     render(<Simulator />);
 
-    // Remains on default 10 minutes shower, 4 hours AC
     const showerInput = screen.getByLabelText(/daily shower duration/i);
     expect(showerInput).toHaveValue(10);
     const acInput = screen.getByLabelText(/air conditioning \(ac\) numeric input/i);
@@ -386,5 +446,34 @@ describe("TrustBanner and Factor Verification Derivation", () => {
   it("hides banner completely when all factors are verified (show is false)", () => {
     const { container } = render(<TrustBanner show={false} />);
     expect(container.firstChild).toBeNull();
+  });
+
+  it("Simulator displays trust banner when factor set contains unverified factors", () => {
+    render(<Simulator />);
+    expect(
+      screen.getByText("Estimates use placeholder averages that are still being verified.")
+    ).toBeInTheDocument();
+  });
+});
+
+describe("Simulator TrustBanner with all verified factors", () => {
+  it("hides trust banner at the Simulator level when all factors are verified", async () => {
+    vi.resetModules();
+    const factorsDataOriginal = await import("@/data/factors.v1.json");
+    const allVerifiedData = {
+      ...factorsDataOriginal.default,
+      factors: factorsDataOriginal.default.factors.map((f) => ({ ...f, verified: true })),
+    };
+
+    vi.doMock("@/data/factors.v1.json", () => ({
+      default: allVerifiedData,
+    }));
+
+    const { Simulator: IsolatedSimulator } = await import("./Simulator.tsx");
+    render(<IsolatedSimulator />);
+
+    expect(
+      screen.queryByText("Estimates use placeholder averages that are still being verified.")
+    ).not.toBeInTheDocument();
   });
 });

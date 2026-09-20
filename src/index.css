@@ -6,37 +6,39 @@
   :root {
     --color-surface: 45 25% 97%;
     --color-surface-raised: 0 0% 100%;
-    --color-surface-subtle: 45 20% 93%;
-    --color-text: 215 28% 13%;
-    --color-text-muted: 215 16% 40%;
-    --color-border: 214 20% 88%;
-    --color-primary: 158 64% 28%;
-    --color-primary-hover: 158 64% 22%;
-    --color-accent: 173 85% 24%;
-    --color-water: 204 100% 32%;
-    --color-water-bg: 204 90% 95%;
-    --color-energy: 26 95% 30%;
-    --color-energy-bg: 36 92% 95%;
-    --color-positive: 158 75% 26%;
-    --color-negative: 12 80% 38%;
+    --color-surface-subtle: 45 20% 92%;
+    --color-text: 215 28% 12%;
+    --color-text-muted: 215 16% 35%;
+    --color-border: 214 20% 84%;
+    --color-primary: 158 75% 24%;
+    --color-primary-hover: 158 75% 18%;
+    --color-on-primary: 0 0% 100%;
+    --color-accent: 175 85% 23%;
+    --color-water: 204 100% 28%;
+    --color-water-bg: 204 80% 93%;
+    --color-energy: 26 95% 28%;
+    --color-energy-bg: 36 92% 93%;
+    --color-positive: 158 75% 24%;
+    --color-negative: 12 85% 35%;
   }
 
   .dark {
     --color-surface: 215 28% 10%;
     --color-surface-raised: 215 26% 15%;
-    --color-surface-subtle: 215 24% 19%;
+    --color-surface-subtle: 215 24% 20%;
     --color-text: 210 20% 96%;
-    --color-text-muted: 215 16% 68%;
-    --color-border: 215 20% 24%;
-    --color-primary: 158 55% 44%;
-    --color-primary-hover: 158 55% 52%;
-    --color-accent: 173 65% 50%;
-    --color-water: 204 90% 60%;
-    --color-water-bg: 204 50% 16%;
-    --color-energy: 36 92% 58%;
-    --color-energy-bg: 36 50% 16%;
-    --color-positive: 158 55% 48%;
-    --color-negative: 12 80% 64%;
+    --color-text-muted: 215 16% 70%;
+    --color-border: 215 20% 26%;
+    --color-primary: 158 60% 45%;
+    --color-primary-hover: 158 60% 52%;
+    --color-on-primary: 215 35% 8%;
+    --color-accent: 175 75% 55%;
+    --color-water: 204 95% 68%;
+    --color-water-bg: 204 50% 12%;
+    --color-energy: 36 95% 65%;
+    --color-energy-bg: 36 50% 12%;
+    --color-positive: 158 65% 55%;
+    --color-negative: 10 90% 70%;
   }
 
   body {
@@ -51,6 +53,55 @@
   :focus-visible {
     outline: 2px solid hsl(var(--color-primary));
     outline-offset: 2px;
+  }
+
+  /* Range slider styling for touch targets (>= 44px height container, 24px thumb) */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 44px;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 9999px;
+    background-color: hsl(var(--color-border));
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    margin-top: -8px;
+    border-radius: 9999px;
+    background-color: hsl(var(--color-primary));
+    border: 2px solid hsl(var(--color-surface-raised));
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform 0.1s ease;
+  }
+
+  input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.15);
+  }
+
+  input[type="range"]::-moz-range-track {
+    height: 8px;
+    border-radius: 9999px;
+    background-color: hsl(var(--color-border));
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 9999px;
+    background-color: hsl(var(--color-primary));
+    border: 2px solid hsl(var(--color-surface-raised));
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
   }
 }
 

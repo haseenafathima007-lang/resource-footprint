@@ -10,9 +10,7 @@
     <script>
       (function() {
         try {
-          var params = new URLSearchParams(window.location.search);
-          var themeParam = params.get("theme");
-          var saved = themeParam || localStorage.getItem("theme");
+          var saved = localStorage.getItem("theme");
           var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
           if (saved === "dark" || (!saved && prefersDark)) {
             document.documentElement.classList.add("dark");

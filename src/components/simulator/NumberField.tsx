@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import type { BaselineProfile } from "@/engine";
+import { validateProfile } from "@/engine";
 
 interface NumberFieldProps {
   id: string;
@@ -9,6 +11,7 @@ interface NumberFieldProps {
   step?: number;
   unit?: string;
   error?: string;
+  field?: keyof BaselineProfile;
   onChange: (val: number) => void;
   helperText?: string;
 }
@@ -22,6 +25,7 @@ export const NumberField: React.FC<NumberFieldProps> = ({
   step = 1,
   unit,
   error,
+  field,
   onChange,
   helperText,
 }) => {
@@ -31,34 +35,43 @@ export const NumberField: React.FC<NumberFieldProps> = ({
   const [rawText, setRawText] = useState<string>(String(value));
   const [localError, setLocalError] = useState<string | null>(null);
 
-  // Sync internal text when external value changes
+  // Restore the guard so raw text only resets when Number(rawText) differs from the incoming value
   useEffect(() => {
+    if (rawText !== "" && Number(rawText) === value) {
+      return;
+    }
     setRawText(String(value));
     setLocalError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     setRawText(raw);
 
-    if (raw.trim() === "") {
-      setLocalError("Value is required");
+    const testVal = raw.trim() === "" ? NaN : Number(raw);
+
+    // Validate using the engine's validateProfile as the single shared source of messages
+    if (field) {
+      const errMap = validateProfile({ [field]: testVal });
+      if (errMap && errMap[field]) {
+        setLocalError(errMap[field]);
+        return;
+      }
+    }
+
+    if (raw.trim() === "" || !Number.isFinite(testVal)) {
+      setLocalError(`${label} must be a valid number`);
       return;
     }
 
-    const parsed = Number(raw);
-    if (!Number.isFinite(parsed)) {
-      setLocalError("Please enter a valid number");
-      return;
-    }
-
-    if (parsed < min || parsed > max) {
+    if (testVal < min || testVal > max) {
       setLocalError(`${label} must be between ${min} and ${max}`);
       return;
     }
 
     setLocalError(null);
-    onChange(parsed);
+    onChange(testVal);
   };
 
   const activeError = error || localError;
@@ -85,7 +98,7 @@ export const NumberField: React.FC<NumberFieldProps> = ({
           aria-describedby={
             activeError ? errorId : helperText ? helperId : undefined
           }
-          className={`w-full px-3 py-2 text-sm rounded-lg border bg-surface-raised text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+          className={`w-full min-h-[44px] px-3 py-2 text-sm rounded-lg border bg-surface-raised text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
             activeError
               ? "border-negative focus-visible:ring-negative"
               : "border-border hover:border-ink-muted/50"

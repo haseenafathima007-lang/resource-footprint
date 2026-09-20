@@ -1,5 +1,9 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import type { BaselineProfile, Period, ActivityResult } from "@/engine";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import type {
+  BaselineProfile,
+  Period,
+  ActivityResult,
+} from "@/engine";
 import {
   calculateProfile,
   compareProfiles,
@@ -7,12 +11,12 @@ import {
   toFactorsMap,
   validateProfile,
 } from "@/engine";
-import factorsData from "@/data/factors.v1.json";
-import { useAuth } from "./useAuth.tsx";
-import { baselineRepository } from "@/services/supabase/baselineRepository.ts";
 import type { ScenarioHabits } from "@/lib/summary.ts";
 import { generateSummary } from "@/lib/summary.ts";
 import { parseStateFromQuery, serializeStateToQuery } from "@/lib/urlState.ts";
+import factorsData from "@/data/factors.v1.json";
+import { baselineRepository } from "@/services/supabase/baselineRepository.ts";
+import { useAuth } from "./useAuth.tsx";
 
 export const DEFAULT_BASELINE: BaselineProfile = {
   effectiveFrom: "2026-01-01",
@@ -165,7 +169,7 @@ export function useSimulatorState() {
     return () => clearTimeout(timer);
   }, [summarySentence]);
 
-  // Baseline updater
+  // Baseline updater: StrictMode safe (setScenario moved out of setBaseline updater)
   const updateBaselineField = useCallback(
     <K extends keyof BaselineProfile>(field: K, val: BaselineProfile[K]) => {
       hasUserInteractedRef.current = true;
@@ -181,17 +185,15 @@ export function useSimulatorState() {
         return next;
       });
 
-      setBaseline((prev) => {
-        const updated = { ...prev, [field]: val };
-        const sKey = field as keyof ScenarioHabits;
-        // If scenario was matching this habit before, keep it in sync
-        if (sKey in scenario && scenario[sKey] === (prev as unknown as ScenarioHabits)[sKey]) {
-          setScenario((s) => ({ ...s, [sKey]: val as number }));
-        }
-        return updated;
-      });
+      setBaseline((prev) => ({ ...prev, [field]: val }));
+
+      const sKey = field as keyof ScenarioHabits;
+      // If scenario was matching this habit before, keep it in sync outside the state updater
+      if (sKey in scenario && scenario[sKey] === baseline[sKey]) {
+        setScenario((s) => ({ ...s, [sKey]: val as number }));
+      }
     },
-    [scenario]
+    [baseline, scenario]
   );
 
   // Scenario updater
@@ -238,8 +240,6 @@ export function useSimulatorState() {
     period,
     baselineErrors,
     scenarioErrors,
-    // Backward compatibility if any component reads errors
-    errors: { ...baselineErrors, ...scenarioErrors },
     isAnyFactorUnverified,
     scaledBaseline,
     scaledScenario,

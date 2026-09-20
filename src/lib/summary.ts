@@ -1,5 +1,5 @@
 import type { BaselineProfile, Period, FactorsMap, FactorSetPayload, Factor } from "@/engine";
-import { compareProfiles, scaleToPeriod, toFactorsMap } from "@/engine";
+import { compareProfiles, scaleToPeriod, toFactorsMap, EngineError } from "@/engine";
 import { formatNumber, formatTypicalValue } from "./format.ts";
 
 export interface ScenarioHabits {
@@ -49,17 +49,25 @@ const LEVERS: LeverMeta[] = [
   },
   {
     key: "laundryLoadsPerWeek",
-    label: "laundry",
+    label: "laundry frequency",
     unit: "load",
     unitPlural: "loads",
     freq: "a week",
   },
 ];
 
+function getFactor(factorsMap: FactorsMap, id: string): Factor {
+  const factor = factorsMap[id];
+  if (!factor) {
+    throw new EngineError(`Missing conversion factor: '${id}'`, "MISSING_FACTOR");
+  }
+  return factor;
+}
+
 /**
  * Generates a single, shareable, plain-English sentence summarizing the single
  * largest habit change between baseline and scenario.
- * Reference values for daily water and energy are read directly from the factor set.
+ * Reference values for daily water and energy are read directly from the factor set (throws if missing).
  */
 export function generateSummary(
   baseline: BaselineProfile,
@@ -67,32 +75,26 @@ export function generateSummary(
   factors: FactorsMap | FactorSetPayload | Factor[],
   period: Period = "month"
 ): string {
-  let dominantLever: LeverMeta | null = null;
   let maxImpact = 0;
+  let dominantLever: LeverMeta | null = null;
   let dominantDelta = 0;
   let dominantWater = 0;
   let dominantEnergy = 0;
 
   const factorsMap = toFactorsMap(factors);
 
-  // Daily reference benchmarks for relative normalization derived from factor set
-  const refWaterDaily =
-    factorsMap["reference.daily.water"]?.typical ??
-    factorsMap["reference.household.water"]?.typical ??
-    250;
-  const refEnergyDaily =
-    factorsMap["reference.daily.energy"]?.typical ??
-    factorsMap["reference.household.energy"]?.typical ??
-    6;
+  // Daily reference benchmarks for relative normalization derived strictly from factor set
+  const refWaterDaily = getFactor(factorsMap, "reference.household.water").typical;
+  const refEnergyDaily = getFactor(factorsMap, "reference.household.energy").typical;
 
   for (const lever of LEVERS) {
     const bVal = baseline[lever.key];
     const sVal = scenario[lever.key];
     const delta = sVal - bVal;
 
-    if (Math.abs(delta) < 1e-6) continue;
+    if (Math.abs(delta) < 0.001) continue;
 
-    // Isolate this lever against baseline
+    // Create an isolated profile with ONLY this lever adjusted from baseline
     const isolatedProfile: BaselineProfile = {
       ...baseline,
       [lever.key]: sVal,

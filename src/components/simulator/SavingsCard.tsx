@@ -1,8 +1,8 @@
 import React from "react";
 import type { ActivityResult, Period } from "@/engine";
-import { TrendingDown, TrendingUp, Sparkles, Droplets, Zap } from "lucide-react";
 import { formatRange, formatTypicalValue } from "@/lib/format.ts";
 import { useAnimatedNumber } from "@/hooks/useAnimatedNumber.ts";
+import { TrendingDown, TrendingUp, Droplets, Zap, Sparkles } from "lucide-react";
 
 interface SavingsCardProps {
   scaledComparison: ActivityResult;
@@ -25,7 +25,7 @@ export const SavingsCard: React.FC<SavingsCardProps> = ({
   const waterTyp = scaledComparison.water.typical;
   const energyTyp = scaledComparison.energy.typical;
 
-  // Animated typical numbers (< 400ms duration)
+  // Animated typical numbers (< 300ms duration)
   const animatedWater = useAnimatedNumber(Math.abs(waterTyp));
   const animatedEnergy = useAnimatedNumber(Math.abs(energyTyp));
 
@@ -112,7 +112,7 @@ export const SavingsCard: React.FC<SavingsCardProps> = ({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-water uppercase tracking-wider">
                 <Droplets className="w-4 h-4" aria-hidden="true" />
-                <span>Water Usage</span>
+                <span>Extra water</span>
               </div>
               <span className="flex items-center gap-1 text-[11px] font-semibold text-negative bg-negative/10 border border-negative/20 px-2 py-0.5 rounded-full">
                 <TrendingUp className="w-3 h-3" aria-hidden="true" />
@@ -161,7 +161,7 @@ export const SavingsCard: React.FC<SavingsCardProps> = ({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-energy uppercase tracking-wider">
                 <Zap className="w-4 h-4" aria-hidden="true" />
-                <span>Energy Usage</span>
+                <span>Extra energy</span>
               </div>
               <span className="flex items-center gap-1 text-[11px] font-semibold text-negative bg-negative/10 border border-negative/20 px-2 py-0.5 rounded-full">
                 <TrendingUp className="w-3 h-3" aria-hidden="true" />

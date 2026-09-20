@@ -3,23 +3,22 @@ import { useState, useEffect, useRef } from "react";
 /**
  * Animates a number smoothly to a target value using requestAnimationFrame.
  * Strictly completes within 300ms.
- * Completely disables animation when prefers-reduced-motion is requested or in test environments.
+ * Completely disables animation when prefers-reduced-motion is requested.
  */
 export function useAnimatedNumber(target: number, duration: number = 300): number {
   const [current, setCurrent] = useState(target);
-  const currentRef = useRef(target);
   const targetRef = useRef(target);
+  const currentRef = useRef(target);
   const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // If prefers-reduced-motion is active, test mode is active, or target is identical, update immediately
+    // If prefers-reduced-motion is active or target is identical, update immediately
     const prefersReducedMotion =
       typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const isTest = typeof process !== "undefined" && process.env.NODE_ENV === "test";
-
-    if (isTest || prefersReducedMotion || typeof requestAnimationFrame !== "function" || targetRef.current === target) {
+    if (prefersReducedMotion || typeof requestAnimationFrame !== "function" || targetRef.current === target) {
       targetRef.current = target;
       currentRef.current = target;
       setCurrent(target);
@@ -28,15 +27,15 @@ export function useAnimatedNumber(target: number, duration: number = 300): numbe
 
     const startValue = currentRef.current;
     const endValue = target;
-    const startTime = performance.now();
     targetRef.current = target;
+    const startTime = performance.now();
 
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
-      const ease = 1 - Math.pow(1 - progress, 3);
-      const nextValue = startValue + (endValue - startValue) * ease;
+      // Ease-out cubic curve
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const nextValue = startValue + (endValue - startValue) * eased;
 
       currentRef.current = nextValue;
       setCurrent(nextValue);
