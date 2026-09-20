@@ -89,7 +89,7 @@ export function toFactorsMap(
       return acc;
     }, {});
   }
-  return factors;
+  return factors as FactorsMap;
 }
 
 const ZERO_RANGE: Range = { low: 0, typical: 0, high: 0 };
