@@ -1,0 +1,117 @@
+{
+  "version": "1.0.0",
+  "region": "global",
+  "effectiveFrom": "2026-01-01",
+  "factors": [
+    {
+      "id": "shower.flow",
+      "label": "Shower Flow Rate",
+      "unit": "L/min",
+      "low": 6.0,
+      "typical": 9.0,
+      "high": 12.0,
+      "source": "EPA WaterSense Standard / WRAP shower study 2020",
+      "version": "1.0.0",
+      "region": "global"
+    },
+    {
+      "id": "shower.heating",
+      "label": "Water Heating Energy (Electric Geyser)",
+      "unit": "kWh/L",
+      "low": 0.026,
+      "typical": 0.029,
+      "high": 0.032,
+      "source": "Thermodynamic specific heat of water (4.184 kJ/kg·K) at ~85-95% electrical efficiency for ~25°C temperature rise",
+      "version": "1.0.0",
+      "region": "global"
+    },
+    {
+      "id": "ac.power",
+      "label": "Air Conditioner Power Draw (1.5-ton split)",
+      "unit": "kW",
+      "low": 0.9,
+      "typical": 1.3,
+      "high": 1.8,
+      "source": "BEE / EnergyStar 1.5-ton split inverter AC ratings",
+      "version": "1.0.0",
+      "region": "global"
+    },
+    {
+      "id": "fan.power",
+      "label": "Ceiling Fan Power Draw",
+      "unit": "kW",
+      "low": 0.045,
+      "typical": 0.06,
+      "high": 0.075,
+      "source": "Standard ceiling fan 1200mm sweep wattage benchmark",
+      "version": "1.0.0",
+      "region": "global"
+    },
+    {
+      "id": "laptop.power",
+      "label": "Laptop Active Power Draw",
+      "unit": "kW",
+      "low": 0.03,
+      "typical": 0.05,
+      "high": 0.08,
+      "source": "Typical modern laptop active working load benchmarks",
+      "version": "1.0.0",
+      "region": "global"
+    },
+    {
+      "id": "laundry.water.topLoad",
+      "label": "Top-Load Washing Machine Water Use",
+      "unit": "L/load",
+      "low": 100.0,
+      "typical": 130.0,
+      "high": 170.0,
+      "source": "Water Efficiency Lab standard top-load washing machine cycle",
+      "version": "1.0.0",
+      "region": "global"
+    },
+    {
+      "id": "laundry.water.frontLoad",
+      "label": "Front-Load Washing Machine Water Use",
+      "unit": "L/load",
+      "low": 40.0,
+      "typical": 55.0,
+      "high": 70.0,
+      "source": "Water Efficiency Lab standard front-load washing machine cycle",
+      "version": "1.0.0",
+      "region": "global"
+    },
+    {
+      "id": "laundry.energy.machine",
+      "label": "Washing Machine Energy Use",
+      "unit": "kWh/load",
+      "low": 0.2,
+      "typical": 0.4,
+      "high": 0.8,
+      "source": "Standard cycle laundry power measurement benchmarks",
+      "version": "1.0.0",
+      "region": "global"
+    },
+    {
+      "id": "reference.household.water",
+      "label": "Reference Household Daily Water Use",
+      "unit": "L/day",
+      "low": 200.0,
+      "typical": 250.0,
+      "high": 300.0,
+      "source": "Standard urban reference benchmark for daily household water consumption",
+      "version": "1.0.0",
+      "region": "global"
+    },
+    {
+      "id": "reference.household.energy",
+      "label": "Reference Household Daily Energy Use",
+      "unit": "kWh/day",
+      "low": 4.5,
+      "typical": 6.0,
+      "high": 8.0,
+      "source": "Standard urban reference benchmark for daily household energy consumption",
+      "version": "1.0.0",
+      "region": "global"
+    }
+  ]
+}
