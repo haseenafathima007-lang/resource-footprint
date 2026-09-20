@@ -1,4 +1,5 @@
 import React from "react";
+import factorsData from "@/data/factors.v1.json";
 
 export const Footer: React.FC = () => {
   return (
@@ -16,7 +17,7 @@ export const Footer: React.FC = () => {
             Estimates, not measurements
           </span>
           <p className="text-xs text-ink-muted">
-            Empirical factors v1.0.0 (global)
+            Factor set v{factorsData.version} ({factorsData.region})
           </p>
         </div>
       </div>

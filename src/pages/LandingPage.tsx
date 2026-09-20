@@ -1,20 +1,20 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Simulator } from "@/components/simulator/Simulator.tsx";
-import factorsData from "@/data/factors.v1.json";
 import {
   Sparkles,
   Sliders,
   BarChart3,
   CheckCircle2,
+  ShieldCheck,
   ChevronDown,
   ArrowRight,
-  ShieldCheck,
 } from "lucide-react";
+import { Simulator } from "@/components/simulator/Simulator.tsx";
+import factorsData from "@/data/factors.v1.json";
 
 export const LandingPage: React.FC = () => {
   useEffect(() => {
-    document.title = "Resource Footprint — See what your daily habits really cost";
+    document.title = "Resource Footprint - Personal Water & Energy Habit Simulator";
   }, []);
 
   return (
@@ -32,7 +32,7 @@ export const LandingPage: React.FC = () => {
 
         <p className="text-base sm:text-lg text-ink-muted leading-relaxed">
           No sign-up required. Adjust everyday habits to explore tangible water and
-          energy footprints in litres and kilowatt-hours, backed by empirical ranges.
+          energy footprints in litres and kilowatt-hours, with estimated ranges from average values still being verified against published sources.
         </p>
       </section>
 
@@ -95,7 +95,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. HONEST NUMBERS & EMPIRICAL FACTORS DISCLOSURE */}
+      {/* 4. HONEST NUMBERS & FACTORS DISCLOSURE */}
       <section aria-labelledby="honest-numbers-heading" className="p-6 sm:p-8 rounded-2xl bg-surface-raised border border-border shadow-sm flex flex-col gap-5">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-xl bg-accent/10 text-accent shrink-0 mt-1">
@@ -106,8 +106,8 @@ export const LandingPage: React.FC = () => {
               Honest Numbers: Estimates, Not Measurements
             </h2>
             <p className="text-sm text-ink-muted mt-1 leading-relaxed">
-              We never present false precision. Every calculation provides an estimated range (low, typical, high)
-              derived from published engineering benchmarks, verified laboratory studies, and public utility standards.
+              We never present false precision. Every calculation provides an estimated range (low, typical, high).
+              Results are estimated ranges from average values still being verified against published sources.
             </p>
           </div>
         </div>
@@ -126,21 +126,33 @@ export const LandingPage: React.FC = () => {
                   <th className="pb-2 font-semibold">Label</th>
                   <th className="pb-2 font-semibold">Unit</th>
                   <th className="pb-2 font-semibold">Typical (Low – High)</th>
-                  <th className="pb-2 font-semibold">Empirical Source</th>
+                  <th className="pb-2 font-semibold">Source</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {factorsData.factors.map((f) => (
-                  <tr key={f.id} className="hover:bg-surface/50">
-                    <td className="py-2.5 font-mono text-[11px] text-ink-muted pr-2">{f.id}</td>
-                    <td className="py-2.5 font-medium text-ink pr-2">{f.label}</td>
-                    <td className="py-2.5 text-ink-muted pr-2 whitespace-nowrap">{f.unit}</td>
-                    <td className="py-2.5 font-semibold text-ink pr-2 whitespace-nowrap">
-                      {f.typical} ({f.low} – {f.high})
-                    </td>
-                    <td className="py-2.5 text-ink-muted max-w-xs">{f.source}</td>
-                  </tr>
-                ))}
+                {factorsData.factors.map((f) => {
+                  const isVerified = (f as { verified?: boolean }).verified === true;
+                  return (
+                    <tr key={f.id} className="hover:bg-surface/50">
+                      <td className="py-2.5 font-mono text-[11px] text-ink-muted pr-2">{f.id}</td>
+                      <td className="py-2.5 font-medium text-ink pr-2">{f.label}</td>
+                      <td className="py-2.5 text-ink-muted pr-2 whitespace-nowrap">{f.unit}</td>
+                      <td className="py-2.5 font-semibold text-ink pr-2 whitespace-nowrap">
+                        {f.typical} ({f.low} – {f.high})
+                      </td>
+                      <td className="py-2.5 text-ink-muted max-w-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <span>{f.source}</span>
+                          {!isVerified && (
+                            <span className="inline-block px-1.5 py-0.5 text-[10px] font-semibold text-ink-muted bg-surface border border-border rounded shrink-0">
+                              unverified
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

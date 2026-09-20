@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 /**
  * Animates a number smoothly to a target value using requestAnimationFrame.
  * Strictly completes within 300ms.
- * Completely disables animation when prefers-reduced-motion is requested.
+ * Completely disables animation when prefers-reduced-motion is requested or in test environments.
  */
 export function useAnimatedNumber(target: number, duration: number = 300): number {
   const [current, setCurrent] = useState(target);
@@ -12,12 +12,14 @@ export function useAnimatedNumber(target: number, duration: number = 300): numbe
   const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // If prefers-reduced-motion is active or target is identical, update immediately
+    // If prefers-reduced-motion is active, test mode is active, or target is identical, update immediately
     const prefersReducedMotion =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    if (prefersReducedMotion || typeof requestAnimationFrame !== "function" || targetRef.current === target) {
+    const isTest = typeof process !== "undefined" && process.env.NODE_ENV === "test";
+
+    if (isTest || prefersReducedMotion || typeof requestAnimationFrame !== "function" || targetRef.current === target) {
       targetRef.current = target;
       currentRef.current = target;
       setCurrent(target);

@@ -8,17 +8,17 @@
     --color-surface-raised: 0 0% 100%;
     --color-surface-subtle: 45 20% 93%;
     --color-text: 215 28% 13%;
-    --color-text-muted: 215 16% 46%;
+    --color-text-muted: 215 16% 40%;
     --color-border: 214 20% 88%;
     --color-primary: 158 64% 28%;
     --color-primary-hover: 158 64% 22%;
-    --color-accent: 173 70% 36%;
-    --color-water: 204 90% 45%;
+    --color-accent: 173 85% 24%;
+    --color-water: 204 100% 32%;
     --color-water-bg: 204 90% 95%;
-    --color-energy: 36 92% 48%;
+    --color-energy: 26 95% 30%;
     --color-energy-bg: 36 92% 95%;
-    --color-positive: 158 64% 32%;
-    --color-negative: 12 76% 52%;
+    --color-positive: 158 75% 26%;
+    --color-negative: 12 80% 38%;
   }
 
   .dark {

@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth.tsx';
 
 type AuthMode = 'signIn' | 'signUp' | 'magicLink';
 
 export function AuthPage() {
+  useEffect(() => {
+    document.title = 'Sign In — Resource Footprint';
+  }, []);
+
   const [mode, setMode] = useState<AuthMode>('signIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

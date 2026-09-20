@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 interface NumberFieldProps {
   id: string;
@@ -28,15 +28,40 @@ export const NumberField: React.FC<NumberFieldProps> = ({
   const errorId = `${id}-error`;
   const helperId = `${id}-helper`;
 
+  const [rawText, setRawText] = useState<string>(String(value));
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  // Sync internal text when external value changes
+  useEffect(() => {
+    setRawText(String(value));
+    setLocalError(null);
+  }, [value]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    if (raw === "") {
-      onChange(0);
+    setRawText(raw);
+
+    if (raw.trim() === "") {
+      setLocalError("Value is required");
       return;
     }
+
     const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) {
+      setLocalError("Please enter a valid number");
+      return;
+    }
+
+    if (parsed < min || parsed > max) {
+      setLocalError(`${label} must be between ${min} and ${max}`);
+      return;
+    }
+
+    setLocalError(null);
     onChange(parsed);
   };
+
+  const activeError = error || localError;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -54,29 +79,29 @@ export const NumberField: React.FC<NumberFieldProps> = ({
           min={min}
           max={max}
           step={step}
-          value={Number.isFinite(value) ? value : 0}
+          value={rawText}
           onChange={handleChange}
-          aria-invalid={Boolean(error)}
+          aria-invalid={Boolean(activeError)}
           aria-describedby={
-            error ? errorId : helperText ? helperId : undefined
+            activeError ? errorId : helperText ? helperId : undefined
           }
           className={`w-full px-3 py-2 text-sm rounded-lg border bg-surface-raised text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-            error
+            activeError
               ? "border-negative focus-visible:ring-negative"
               : "border-border hover:border-ink-muted/50"
           }`}
         />
       </div>
 
-      {helperText && !error && (
+      {helperText && !activeError && (
         <p id={helperId} className="text-xs text-ink-muted">
           {helperText}
         </p>
       )}
 
-      {error && (
+      {activeError && (
         <p id={errorId} role="alert" className="text-xs text-negative font-medium">
-          {error}
+          {activeError}
         </p>
       )}
     </div>

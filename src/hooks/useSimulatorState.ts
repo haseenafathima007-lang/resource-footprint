@@ -16,7 +16,7 @@ import { parseStateFromQuery, serializeStateToQuery } from "@/lib/urlState.ts";
 
 export const DEFAULT_BASELINE: BaselineProfile = {
   effectiveFrom: "2026-01-01",
-  factorsVersion: "1.0.0",
+  factorsVersion: factorsData.version,
   householdSize: 1,
   showerMinutesPerDay: 10,
   showerHeater: "electric",
@@ -35,10 +35,18 @@ export const DEFAULT_SCENARIO: ScenarioHabits = {
   laundryLoadsPerWeek: 4,
 };
 
+export function checkAnyFactorUnverified(
+  factors: Array<{ verified?: boolean; [key: string]: unknown }>
+): boolean {
+  return factors.some((f) => f.verified !== true);
+}
+
 export function useSimulatorState() {
   const initialSearchHadParamsRef = useRef(
     typeof window !== "undefined" && window.location.search.length > 1
   );
+  // Track whether user has explicitly changed anything in the session
+  const hasUserInteractedRef = useRef(false);
   const { user } = useAuth();
 
   // Load factors once offline via engine loader
@@ -46,7 +54,7 @@ export function useSimulatorState() {
 
   // Derive unverified trust banner state directly from factors
   const isAnyFactorUnverified = useMemo(() => {
-    return factorsData.factors.some((f: any) => f.verified !== true);
+    return checkAnyFactorUnverified(factorsData.factors);
   }, []);
 
   // Parse initial state from URL search params if present
@@ -64,7 +72,8 @@ export function useSimulatorState() {
   const [baseline, setBaseline] = useState<BaselineProfile>(initialState.baseline);
   const [scenario, setScenario] = useState<ScenarioHabits>(initialState.scenario);
   const [period, setPeriodState] = useState<Period>(initialState.period);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [baselineErrors, setBaselineErrors] = useState<Record<string, string>>({});
+  const [scenarioErrors, setScenarioErrors] = useState<Record<string, string>>({});
   const [debouncedAriaAnnouncement, setDebouncedAriaAnnouncement] = useState<string>("");
 
   // Prefill baseline if user is signed in and has a baseline
@@ -77,8 +86,8 @@ export function useSimulatorState() {
         const res = await baselineRepository.getCurrentBaseline();
         if (isMounted && res.ok && res.data) {
           const userBaseline = res.data;
-          // Only update if URL did not have explicit parameters
-          if (!initialSearchHadParamsRef.current) {
+          // Only update if URL did not have explicit parameters and user has not manually changed state
+          if (!initialSearchHadParamsRef.current && !hasUserInteractedRef.current) {
             setBaseline(userBaseline);
             setScenario({
               showerMinutesPerDay: userBaseline.showerMinutesPerDay,
@@ -100,9 +109,13 @@ export function useSimulatorState() {
     };
   }, [user]);
 
-  // Sync state to URL search params (using replaceState to avoid history spam)
+  // Sync state to URL search params ONLY after the user has changed something
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Only write URL params if user changed something or initial URL already had params
+    if (!hasUserInteractedRef.current && !initialSearchHadParamsRef.current) {
+      return;
+    }
     const query = serializeStateToQuery(baseline, scenario, period);
     const newUrl = query ? `?${query}` : window.location.pathname;
     window.history.replaceState(null, "", newUrl);
@@ -153,38 +166,44 @@ export function useSimulatorState() {
   }, [summarySentence]);
 
   // Baseline updater
-  const updateBaselineField = useCallback((field: keyof BaselineProfile, val: any) => {
-    const errorMap = validateProfile({ [field]: val });
-    if (errorMap && errorMap[field]) {
-      setErrors((prev) => ({ ...prev, [field]: errorMap[field] }));
-      return;
-    }
-
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
-
-    setBaseline((prev) => {
-      const updated = { ...prev, [field]: val };
-      // If scenario was matching this habit before, keep it in sync
-      if (field in scenario && (scenario as any)[field] === (prev as any)[field]) {
-        setScenario((s) => ({ ...s, [field]: val }));
+  const updateBaselineField = useCallback(
+    <K extends keyof BaselineProfile>(field: K, val: BaselineProfile[K]) => {
+      hasUserInteractedRef.current = true;
+      const errorMap = validateProfile({ [field]: val });
+      if (errorMap && errorMap[field]) {
+        setBaselineErrors((prev) => ({ ...prev, [field]: errorMap[field] }));
+        return;
       }
-      return updated;
-    });
-  }, [scenario]);
+
+      setBaselineErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+
+      setBaseline((prev) => {
+        const updated = { ...prev, [field]: val };
+        const sKey = field as keyof ScenarioHabits;
+        // If scenario was matching this habit before, keep it in sync
+        if (sKey in scenario && scenario[sKey] === (prev as unknown as ScenarioHabits)[sKey]) {
+          setScenario((s) => ({ ...s, [sKey]: val as number }));
+        }
+        return updated;
+      });
+    },
+    [scenario]
+  );
 
   // Scenario updater
   const updateScenarioField = useCallback((field: keyof ScenarioHabits, val: number) => {
+    hasUserInteractedRef.current = true;
     const errorMap = validateProfile({ [field]: val });
     if (errorMap && errorMap[field]) {
-      setErrors((prev) => ({ ...prev, [field]: errorMap[field] }));
+      setScenarioErrors((prev) => ({ ...prev, [field]: errorMap[field] }));
       return;
     }
 
-    setErrors((prev) => {
+    setScenarioErrors((prev) => {
       const next = { ...prev };
       delete next[field];
       return next;
@@ -195,6 +214,7 @@ export function useSimulatorState() {
 
   // Reset scenario changes back to baseline
   const resetScenario = useCallback(() => {
+    hasUserInteractedRef.current = true;
     setScenario({
       showerMinutesPerDay: baseline.showerMinutesPerDay,
       acHoursPerDay: baseline.acHoursPerDay,
@@ -202,11 +222,12 @@ export function useSimulatorState() {
       laptopHoursPerDay: baseline.laptopHoursPerDay,
       laundryLoadsPerWeek: baseline.laundryLoadsPerWeek,
     });
-    setErrors({});
+    setScenarioErrors({});
   }, [baseline]);
 
   // Period switcher
   const setPeriod = useCallback((p: Period) => {
+    hasUserInteractedRef.current = true;
     setPeriodState(p);
   }, []);
 
@@ -215,7 +236,10 @@ export function useSimulatorState() {
     scenario,
     scenarioProfile,
     period,
-    errors,
+    baselineErrors,
+    scenarioErrors,
+    // Backward compatibility if any component reads errors
+    errors: { ...baselineErrors, ...scenarioErrors },
     isAnyFactorUnverified,
     scaledBaseline,
     scaledScenario,

@@ -1,15 +1,18 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Measure, understand, and reduce your everyday water and energy footprint with tangible units and honest ranges." />
-    <title>Resource Footprint — Everyday Water & Energy Calculator</title>
+    <meta name="description" content="Personal water and energy habit simulator. Measure your baseline, explore tangible what-if scenarios, and calculate realistic monthly savings." />
+    <title>Resource Footprint — Personal Water & Energy Habit Simulator</title>
+    <!-- Prevent dark mode flash by checking stored theme synchronously before initial render -->
     <script>
       (function() {
         try {
-          var saved = localStorage.getItem("theme");
+          var params = new URLSearchParams(window.location.search);
+          var themeParam = params.get("theme");
+          var saved = themeParam || localStorage.getItem("theme");
           var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
           if (saved === "dark" || (!saved && prefersDark)) {
             document.documentElement.classList.add("dark");

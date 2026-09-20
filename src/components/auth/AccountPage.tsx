@@ -4,6 +4,10 @@ import { baselineRepository } from '../../services/supabase/baselineRepository.t
 import type { BaselineProfile } from '../../types/profile.ts';
 
 export function AccountPage() {
+  useEffect(() => {
+    document.title = 'Account Settings — Resource Footprint';
+  }, []);
+
   const { user, profile, updateDisplayName, signOut } = useAuth();
   const [displayNameInput, setDisplayNameInput] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);

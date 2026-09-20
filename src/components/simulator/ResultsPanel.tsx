@@ -34,7 +34,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
         <div>
           <h2 className="text-lg font-bold text-ink">Impact & Savings</h2>
           <p className="text-xs text-ink-muted mt-0.5">
-            Real-time projection based on empirical calculation factors
+            Real-time projection based on estimated calculation ranges
           </p>
         </div>
 
@@ -44,9 +44,9 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
       {/* Trust banner notice if any factor is unverified */}
       <TrustBanner show={isAnyFactorUnverified} />
 
-      {/* Debounced screen-reader live region */}
+      {/* Debounced screen-reader live region with distinct accessible label */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
-        {debouncedAnnouncement}
+        {debouncedAnnouncement ? `Live estimate update: ${debouncedAnnouncement}` : ""}
       </div>
 
       {/* Savings highlight card */}

@@ -1,13 +1,13 @@
 import React from "react";
 import type { BaselineProfile } from "@/engine";
 import { PROFILE_BOUNDS } from "@/engine";
-import { Users, Droplets, Flame, Wind, Laptop, Shirt } from "lucide-react";
+import { Users, Droplets, Flame, Wind, Laptop, Shirt, Minus, Plus } from "lucide-react";
 import { NumberField } from "./NumberField.tsx";
 
 interface BaselinePanelProps {
   baseline: BaselineProfile;
   errors: Record<string, string>;
-  onUpdate: (field: keyof BaselineProfile, val: any) => void;
+  onUpdate: <K extends keyof BaselineProfile>(field: K, val: BaselineProfile[K]) => void;
 }
 
 export const BaselinePanel: React.FC<BaselinePanelProps> = ({
@@ -15,6 +15,18 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
   errors,
   onUpdate,
 }) => {
+  const handleHouseholdDec = () => {
+    if (baseline.householdSize > PROFILE_BOUNDS.householdSize.min) {
+      onUpdate("householdSize", baseline.householdSize - 1);
+    }
+  };
+
+  const handleHouseholdInc = () => {
+    if (baseline.householdSize < PROFILE_BOUNDS.householdSize.max) {
+      onUpdate("householdSize", baseline.householdSize + 1);
+    }
+  };
+
   return (
     <section
       aria-labelledby="baseline-heading"
@@ -22,51 +34,55 @@ export const BaselinePanel: React.FC<BaselinePanelProps> = ({
     >
       <div>
         <h2 id="baseline-heading" className="text-lg font-bold text-ink flex items-center gap-2">
-          <span>Your Typical Day</span>
-          <span className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-surface-subtle text-ink-muted border border-border">
+          <span>Current Habits</span>
+          <span className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
             Baseline
           </span>
         </h2>
         <p className="text-sm text-ink-muted mt-1">
-          Describe your usual routine. This sets your baseline reference to measure savings against.
+          Define your household's baseline habits. Shared appliances (AC, fan, laundry) scale with household size.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* 1. Household Size Stepper */}
-        <div className="p-4 rounded-xl bg-surface-subtle border border-border flex flex-col justify-between gap-3">
-          <div className="flex items-center gap-2 text-ink font-medium text-sm">
+        <div className="p-4 rounded-xl bg-surface-subtle border border-border flex flex-col gap-2">
+          <label htmlFor="baseline-householdSize" className="text-sm font-medium text-ink flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" aria-hidden="true" />
-            <label htmlFor="baseline-householdSize">Household Size</label>
-          </div>
-          <div className="flex items-center gap-3">
+            <span>Household Members</span>
+          </label>
+          <div className="flex items-center gap-3 mt-1">
             <button
               type="button"
-              aria-label="Decrease household size"
+              onClick={handleHouseholdDec}
               disabled={baseline.householdSize <= PROFILE_BOUNDS.householdSize.min}
-              onClick={() => onUpdate("householdSize", baseline.householdSize - 1)}
-              className="w-9 h-9 rounded-lg border border-border bg-surface-raised text-ink font-semibold flex items-center justify-center hover:bg-surface disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label="Decrease household size"
+              className="w-8 h-8 rounded-lg border border-border bg-surface hover:bg-surface-raised disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              −
+              <Minus className="w-4 h-4" aria-hidden="true" />
             </button>
-            <span className="text-base font-bold text-ink w-8 text-center" aria-live="polite">
+            <span
+              id="baseline-householdSize"
+              aria-live="polite"
+              className="text-base font-bold text-ink w-8 text-center"
+            >
               {baseline.householdSize}
             </span>
             <button
               type="button"
-              aria-label="Increase household size"
+              onClick={handleHouseholdInc}
               disabled={baseline.householdSize >= PROFILE_BOUNDS.householdSize.max}
-              onClick={() => onUpdate("householdSize", baseline.householdSize + 1)}
-              className="w-9 h-9 rounded-lg border border-border bg-surface-raised text-ink font-semibold flex items-center justify-center hover:bg-surface disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label="Increase household size"
+              className="w-8 h-8 rounded-lg border border-border bg-surface hover:bg-surface-raised disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              +
+              <Plus className="w-4 h-4" aria-hidden="true" />
             </button>
             <span className="text-xs text-ink-muted ml-auto">
               {baseline.householdSize === 1 ? "person" : "people"}
             </span>
           </div>
           {errors.householdSize && (
-            <p className="text-xs text-negative font-medium">{errors.householdSize}</p>
+            <p role="alert" className="text-xs text-negative font-medium">{errors.householdSize}</p>
           )}
         </div>
 

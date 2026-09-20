@@ -1,6 +1,6 @@
 import type { BaselineProfile, Period, FactorsMap, FactorSetPayload, Factor } from "@/engine";
-import { compareProfiles, scaleToPeriod } from "@/engine";
-import { formatNumber, roundToSigFigs } from "./format.ts";
+import { compareProfiles, scaleToPeriod, toFactorsMap } from "@/engine";
+import { formatNumber, formatTypicalValue } from "./format.ts";
 
 export interface ScenarioHabits {
   showerMinutesPerDay: number;
@@ -59,6 +59,7 @@ const LEVERS: LeverMeta[] = [
 /**
  * Generates a single, shareable, plain-English sentence summarizing the single
  * largest habit change between baseline and scenario.
+ * Reference values for daily water and energy are read directly from the factor set.
  */
 export function generateSummary(
   baseline: BaselineProfile,
@@ -72,9 +73,17 @@ export function generateSummary(
   let dominantWater = 0;
   let dominantEnergy = 0;
 
-  // Daily reference benchmarks for relative normalization
-  const REF_WATER_DAILY = 250;
-  const REF_ENERGY_DAILY = 6;
+  const factorsMap = toFactorsMap(factors);
+
+  // Daily reference benchmarks for relative normalization derived from factor set
+  const refWaterDaily =
+    factorsMap["reference.daily.water"]?.typical ??
+    factorsMap["reference.household.water"]?.typical ??
+    250;
+  const refEnergyDaily =
+    factorsMap["reference.daily.energy"]?.typical ??
+    factorsMap["reference.household.energy"]?.typical ??
+    6;
 
   for (const lever of LEVERS) {
     const bVal = baseline[lever.key];
@@ -89,21 +98,21 @@ export function generateSummary(
       [lever.key]: sVal,
     };
 
-    const diff = compareProfiles(baseline, isolatedProfile, factors);
+    const diff = compareProfiles(baseline, isolatedProfile, factorsMap);
     const scaled = scaleToPeriod(diff, period);
 
     const waterTypical = Math.abs(scaled.water.typical);
     const energyTypical = Math.abs(scaled.energy.typical);
 
-    // Relative impact score against standard reference consumption
-    const impact = waterTypical / REF_WATER_DAILY + energyTypical / REF_ENERGY_DAILY;
+    // Relative impact score against reference consumption from factor set
+    const impact = waterTypical / refWaterDaily + energyTypical / refEnergyDaily;
 
     if (impact > maxImpact) {
       maxImpact = impact;
       dominantLever = lever;
       dominantDelta = delta;
-      dominantWater = roundToSigFigs(waterTypical, 2);
-      dominantEnergy = roundToSigFigs(energyTypical, 2);
+      dominantWater = waterTypical;
+      dominantEnergy = energyTypical;
     }
   }
 
@@ -112,26 +121,41 @@ export function generateSummary(
   }
 
   const absDelta = Math.abs(dominantDelta);
-  const deltaUnitStr = absDelta === 1 ? `1 ${dominantLever.unit}` : `${formatNumber(absDelta)} ${dominantLever.unitPlural}`;
-  const periodStr = period === "day" ? "a day" : period === "week" ? "a week" : period === "month" ? "a month" : "a year";
+  const deltaUnitStr =
+    absDelta === 1
+      ? `1 ${dominantLever.unit}`
+      : `${formatNumber(absDelta)} ${dominantLever.unitPlural}`;
+  const periodStr =
+    period === "day"
+      ? "a day"
+      : period === "week"
+      ? "a week"
+      : period === "month"
+      ? "a month"
+      : "a year";
+
+  const formattedWater = formatTypicalValue(dominantWater);
+  const formattedEnergy = formatTypicalValue(dominantEnergy);
+  const hasWater = dominantWater > 0.05;
+  const hasEnergy = dominantEnergy > 0.05;
 
   // Savings (reduction in consumption)
   if (dominantDelta < 0) {
-    if (dominantWater > 0 && dominantEnergy > 0) {
-      return `Cutting ${dominantLever.label} by ${deltaUnitStr} ${dominantLever.freq} could save about ${formatNumber(dominantWater)} L of water and ${formatNumber(dominantEnergy)} kWh of energy ${periodStr}.`;
+    if (hasWater && hasEnergy) {
+      return `Cutting ${dominantLever.label} by ${deltaUnitStr} ${dominantLever.freq} could save about ${formattedWater} L of water and ${formattedEnergy} kWh of energy ${periodStr}.`;
     }
-    if (dominantWater > 0) {
-      return `Cutting ${dominantLever.label} by ${deltaUnitStr} ${dominantLever.freq} could save about ${formatNumber(dominantWater)} L of water ${periodStr}.`;
+    if (hasWater) {
+      return `Cutting ${dominantLever.label} by ${deltaUnitStr} ${dominantLever.freq} could save about ${formattedWater} L of water ${periodStr}.`;
     }
-    return `Cutting ${dominantLever.label} by ${deltaUnitStr} ${dominantLever.freq} could save about ${formatNumber(dominantEnergy)} kWh of energy ${periodStr}.`;
+    return `Cutting ${dominantLever.label} by ${deltaUnitStr} ${dominantLever.freq} could save about ${formattedEnergy} kWh of energy ${periodStr}.`;
   }
 
   // Increase in consumption
-  if (dominantWater > 0 && dominantEnergy > 0) {
-    return `Increasing ${dominantLever.label} by ${deltaUnitStr} ${dominantLever.freq} would use about ${formatNumber(dominantWater)} L of water and ${formatNumber(dominantEnergy)} kWh of energy more ${periodStr}.`;
+  if (hasWater && hasEnergy) {
+    return `Increasing ${dominantLever.label} by ${deltaUnitStr} ${dominantLever.freq} would use about ${formattedWater} L of water and ${formattedEnergy} kWh of energy more ${periodStr}.`;
   }
-  if (dominantWater > 0) {
-    return `Increasing ${dominantLever.label} by ${deltaUnitStr} ${dominantLever.freq} would use about ${formatNumber(dominantWater)} L of water more ${periodStr}.`;
+  if (hasWater) {
+    return `Increasing ${dominantLever.label} by ${deltaUnitStr} ${dominantLever.freq} would use about ${formattedWater} L of water more ${periodStr}.`;
   }
-  return `Increasing ${dominantLever.label} by ${deltaUnitStr} ${dominantLever.freq} would use about ${formatNumber(dominantEnergy)} kWh of energy more ${periodStr}.`;
+  return `Increasing ${dominantLever.label} by ${deltaUnitStr} ${dominantLever.freq} would use about ${formattedEnergy} kWh of energy more ${periodStr}.`;
 }

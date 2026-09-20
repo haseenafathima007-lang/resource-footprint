@@ -64,6 +64,15 @@ export function formatNumber(val: number): string {
 }
 
 /**
+ * Common formatter for typical values used consistently by the SavingsCard,
+ * SummaryCard, and sticky results bar. Rounds to 2 significant figures and formats.
+ */
+export function formatTypicalValue(val: number): string {
+  const rounded = roundToSigFigs(Math.abs(val), 2);
+  return formatNumber(rounded);
+}
+
+/**
  * Formats an outward-rounded range: low floored, high ceiled.
  */
 export function formatRange(low: number, high: number, unit?: string): string {
@@ -83,8 +92,8 @@ export function formatSavingsDetails(
   high: number,
   unit: string
 ): string {
-  const roundedTyp = roundToSigFigs(typical, 2);
+  const formattedTyp = formatTypicalValue(typical);
   const roundedLow = roundOutward(low, "floor", 2);
   const roundedHigh = roundOutward(high, "ceil", 2);
-  return `typically ~${formatNumber(roundedTyp)}, range ${formatNumber(roundedLow)}–${formatNumber(roundedHigh)} ${unit}`;
+  return `typically ~${formattedTyp}, range ${formatNumber(roundedLow)}–${formatNumber(roundedHigh)} ${unit}`;
 }

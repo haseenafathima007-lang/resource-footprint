@@ -5,6 +5,11 @@ export type Theme = "light" | "dark" | "system";
 export function useTheme() {
   const [theme, setThemeState] = useState<Theme>(() => {
     try {
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        const t = params.get("theme");
+        if (t === "light" || t === "dark") return t;
+      }
       const saved = localStorage.getItem("theme");
       if (saved === "light" || saved === "dark" || saved === "system") {
         return saved;
@@ -17,6 +22,9 @@ export function useTheme() {
 
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() => {
     if (typeof window === "undefined") return "light";
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("theme") === "dark") return "dark";
+    if (params.get("theme") === "light") return "light";
     return typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
 
