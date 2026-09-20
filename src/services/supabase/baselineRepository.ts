@@ -13,7 +13,7 @@ import {
   mapBaselineToDbInsert,
   type DbBaselineProfileRow,
 } from '../mappers.ts';
-import { validateProfile } from '../../engine/engine.ts';
+import { validateProfile } from '@/engine';
 
 export class SupabaseBaselineRepository implements IBaselineRepository {
   constructor(private client: SupabaseClient<Database> = defaultClient) {}

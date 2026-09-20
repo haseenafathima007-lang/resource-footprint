@@ -5,7 +5,7 @@ import {
   calculateProfile,
   PROFILE_BOUNDS,
   EngineError,
-} from '../engine.ts';
+} from '@/engine';
 import factorsData from '../../data/factors.v1.json';
 import type { BaselineProfile } from '../../types/profile.ts';
 

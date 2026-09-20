@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateScore } from '../engine.ts';
+import { calculateScore } from '@/engine';
 
 describe('Engine: calculateScore', () => {
   // Reference benchmark: water = 250 L/day, energy = 6 kWh/day

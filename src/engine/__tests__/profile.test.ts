@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateProfile, compareProfiles } from '../engine.ts';
+import { calculateProfile, compareProfiles } from '@/engine';
 import factorsData from '../../data/factors.v1.json';
 import type { BaselineProfile } from '../../types/profile.ts';
 

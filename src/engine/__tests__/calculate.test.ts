@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculate } from '../engine.ts';
+import { calculate } from '@/engine';
 import factorsData from '../../data/factors.v1.json';
 
 describe('Engine: calculate', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scaleToPeriod, PERIOD_MULTIPLIERS, EngineError } from '../engine.ts';
+import { scaleToPeriod, PERIOD_MULTIPLIERS, EngineError } from '@/engine';
 import type { ActivityResult } from '../../types/calculation.ts';
 
 describe('Engine: scaleToPeriod', () => {

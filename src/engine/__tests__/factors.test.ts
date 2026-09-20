@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateFactorSet, toFactorsMap, EngineError } from '../engine.ts';
+import { validateFactorSet, toFactorsMap, EngineError } from '@/engine';
 import factorsData from '../../data/factors.v1.json';
 
 describe('Engine: factors loader & validation', () => {
